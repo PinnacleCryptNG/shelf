@@ -1,4 +1,5 @@
 const API = "https://api.trychannel3.com/v1/search";
+const STOP = new Set(["the", "and", "with", "for", "box", "set", "pack", "inch", "handmade", "small", "large", "of"]);
 const CURRENCIES = ["USD", "CAD", "AUD", "GBP", "EUR", "SEK", "CZK", "RON", "CHF", "PLN"];
 const COUNTRIES: Record<string, string> = {
   "united states": "US", usa: "US", canada: "CA", "united kingdom": "GB", uk: "GB", england: "GB", scotland: "GB", wales: "GB",
@@ -23,15 +24,21 @@ async function searchOne(query: string, currency: string, country?: string): Pro
   });
   if (!res.ok) throw new Error(`Channel3 ${res.status}: ${(await res.text()).slice(0, 200)}`);
   const data = (await res.json()) as { products?: C3Product[] };
+  const words = (t: string) => new Set(t.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((w) => w.length >= 3 && !STOP.has(w)));
+  const want = words(query);
   const examples = (data.products || [])
+    .filter((p) => [...words(p.title)].some((w) => want.has(w)))
     .map((p) => {
       const o = (p.offers || []).filter((x) => x.price?.currency === currency && x.availability !== "OutOfStock").sort((a, b) => a.price.price - b.price.price)[0];
       return o ? { title: p.title, domain: o.domain, price: o.price.price, url: o.url } : null;
     })
     .filter((x): x is NonNullable<typeof x> => Boolean(x));
-  if (examples.length < 2) return null;
+  if (examples.length < 3) return null;
   const prices = examples.map((e) => e.price).sort((a, b) => a - b);
-  return { low: prices[0], median: prices[Math.floor(prices.length / 2)], high: prices[prices.length - 1], count: prices.length, examples: examples.slice(0, 3) };
+  const q = (f: number) => prices[Math.min(prices.length - 1, Math.floor(f * (prices.length - 1) + 0.5))];
+  const median = q(0.5);
+  examples.sort((a, b) => Math.abs(a.price - median) - Math.abs(b.price - median));
+  return { low: q(0.25), median, high: q(0.75), count: prices.length, examples: examples.slice(0, 3) };
 }
 
 export async function marketCheck(items: { name: string; category?: string }[], currency: string, country?: string | null) {
