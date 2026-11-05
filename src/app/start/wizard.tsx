@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { CatalogGrid } from "@/components/catalog-grid";
+import { CatalogGrid, type Market } from "@/components/catalog-grid";
 
 type DraftProduct = { name: string; description: string; price: number; category: string; tags: string[]; image_url: string | null; stock?: number | null };
 type Draft = { shop: { name: string; tagline: string; about: string; city: string; country: string; currency: string; ships_to: string }; products: DraftProduct[] };
@@ -20,6 +20,21 @@ export function Wizard({ aiReady }: { aiReady: boolean }) {
   const [text, setText] = useState("");
   const [image, setImage] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
+  const [market, setMarket] = useState<{ state: "loading" | "ready" | "off"; byName: Record<string, Market>; note?: string }>({ state: "off", byName: {} });
+
+  async function checkMarket(d: Draft) {
+    setMarket({ state: "loading", byName: {} });
+    try {
+      const r = await fetch("/api/market", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ currency: d.shop.currency, country: d.shop.country, products: d.products.map((p) => ({ name: p.name, category: p.category })) }) });
+      const j = await r.json();
+      if (!j.available) return setMarket({ state: "off", byName: {}, note: j.reason });
+      const byName: Record<string, Market> = {};
+      d.products.forEach((p, i) => (byName[p.name] = j.results[i]));
+      setMarket({ state: "ready", byName });
+    } catch {
+      setMarket({ state: "off", byName: {} });
+    }
+  }
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -42,6 +57,7 @@ export function Wizard({ aiReady }: { aiReady: boolean }) {
     setBusy(null);
     if (!r.ok) return setErr(j.error || "Couldn't read that. Try pasting your price list instead.");
     setDraft(j.draft);
+    void checkMarket(j.draft);
   }
 
   async function publish() {
@@ -107,8 +123,8 @@ export function Wizard({ aiReady }: { aiReady: boolean }) {
         <label className="text-sm sm:col-span-2">PayPal email to receive payments <span className="text-muted">(optional in the sandbox)</span><input className="field mt-1" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@business.example" /></label>
       </div>
       <h2 className="display mt-10 text-2xl font-semibold">{draft.products.length} products</h2>
-      <p className="mt-1 text-sm text-muted">Tap a cell to edit it. Prices are what agents will be charged; leave stock blank for unlimited.</p>
-      <div className="mt-4"><CatalogGrid rows={draft.products} currency={draft.shop.currency} onChange={(products) => setDraft((d) => d && { ...d, products })} /></div>
+      <p className="mt-1 text-sm text-muted">Tap a cell to edit it. Prices are what agents will be charged; leave stock blank for unlimited.{market.state !== "off" && " The Market column compares each price with similar products online, via Channel3."}{market.note && <span className="block text-xs">{market.note}</span>}</p>
+      <div className="mt-4"><CatalogGrid rows={draft.products} currency={draft.shop.currency} market={market.state === "off" ? null : market.byName} marketLoading={market.state === "loading"} onChange={(products) => setDraft((d) => d && { ...d, products })} /></div>
       <div className="sticky bottom-3 mt-8 flex flex-wrap items-center gap-3 rounded-2xl border border-line bg-paper/95 p-3 backdrop-blur">
         <button onClick={publish} disabled={!!busy || !draft.products.length} className="btn btn-tomato">{busy || "Publish to PayPal & open to agents"}</button>
         <button onClick={() => setDraft(null)} disabled={!!busy} className="btn btn-ghost">Start over</button>
