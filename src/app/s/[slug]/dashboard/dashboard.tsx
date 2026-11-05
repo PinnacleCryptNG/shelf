@@ -1,6 +1,6 @@
 "use client";
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
+import { DefaultChatTransport, lastAssistantMessageIsCompleteWithApprovalResponses } from "ai";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CopyField } from "@/components/copy-field";
 import { ProductsGrid } from "@/components/products-grid";
@@ -20,8 +20,8 @@ function ago(iso: string) {
   return s < 60 ? `${s}s ago` : s < 3600 ? `${Math.round(s / 60)}m ago` : s < 86400 ? `${Math.round(s / 3600)}h ago` : `${Math.round(s / 86400)}d ago`;
 }
 
-export function Dashboard({ shop, mcpUrl, initialOrders, initialEvents, products: initialProducts, aiReady, paypalLive }: {
-  shop: ShopLite; mcpUrl: string; initialOrders: Order[]; initialEvents: ShopEvent[]; products: P[]; aiReady: boolean; paypalLive: boolean;
+export function Dashboard({ shop, mcpUrl, initialOrders, initialEvents, products: initialProducts, aiReady, paypalLive, readOnly, ownerLink }: {
+  shop: ShopLite; mcpUrl: string; initialOrders: Order[]; initialEvents: ShopEvent[]; products: P[]; aiReady: boolean; paypalLive: boolean; readOnly: boolean; ownerLink: string | null;
 }) {
   const [orders, setOrders] = useState(initialOrders);
   const [events, setEvents] = useState(initialEvents);
@@ -70,6 +70,15 @@ export function Dashboard({ shop, mcpUrl, initialOrders, initialEvents, products
         <div className="w-full max-w-md"><CopyField label="Agents connect at" value={mcpUrl} /></div>
       </div>
 
+      {readOnly && (
+        <p className="mt-5 rounded-2xl border border-line bg-card px-4 py-3 text-sm text-muted">
+          View-only demo. Watch orders arrive live and ask the copilot questions; refunds, tracking and buyer details are reserved for the owner.
+        </p>
+      )}
+      {ownerLink && (
+        <div className="mt-5 max-w-2xl"><CopyField label="Your private owner link. Keep it secret; it opens this dashboard on any device." value={ownerLink} /></div>
+      )}
+
       <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
         {[["Paid revenue", stats.revenue], ["Paid orders", String(stats.paid)], ["Bought by agents", `${stats.agentShare}%`], ["Agent searches", String(stats.searches)]].map(([k, v]) => (
           <div key={k} className="rounded-2xl border border-line bg-card p-4"><p className="text-xs text-muted">{k}</p><p className="display mt-1 text-2xl font-semibold">{v}</p></div>
@@ -83,7 +92,7 @@ export function Dashboard({ shop, mcpUrl, initialOrders, initialEvents, products
           </div>
           {tab === "orders" ? (
             orders.length === 0 ? <p className="rounded-2xl border border-dashed border-line p-8 text-center text-muted">No orders yet. Point an agent at your MCP address, or try the <a href="/agent" className="underline">demo agent</a>.</p> : (
-              <ul className="space-y-3">{orders.map((o) => <OrderRow key={o.id} o={o} slug={shop.slug} onChange={(u) => setOrders((os) => os.map((x) => (x.id === u.id ? u : x)))} />)}</ul>
+              <ul className="space-y-3">{orders.map((o) => <OrderRow key={o.id} o={o} slug={shop.slug} readOnly={readOnly} onChange={(u) => setOrders((os) => os.map((x) => (x.id === u.id ? u : x)))} />)}</ul>
             )
           ) : (
             <ProductsGrid currency={shop.currency} rows={products.map((p) => ({ ...p, sold: sold[p.id] || 0 }))} />
@@ -103,14 +112,14 @@ export function Dashboard({ shop, mcpUrl, initialOrders, initialEvents, products
               ))}
             </ul>
           </div>
-          <Copilot slug={shop.slug} aiReady={aiReady} />
+          <Copilot slug={shop.slug} aiReady={aiReady} readOnly={readOnly} />
         </aside>
       </div>
     </main>
   );
 }
 
-function OrderRow({ o, slug, onChange }: { o: Order; slug: string; onChange: (o: Order) => void }) {
+function OrderRow({ o, slug, readOnly, onChange }: { o: Order; slug: string; readOnly: boolean; onChange: (o: Order) => void }) {
   const [open, setOpen] = useState<"ship" | null>(null);
   const [carrier, setCarrier] = useState("ROYAL_MAIL");
   const [num, setNum] = useState("");
@@ -141,7 +150,7 @@ function OrderRow({ o, slug, onChange }: { o: Order; slug: string; onChange: (o:
           <span className={`mono rounded-full px-2 py-0.5 text-[10px] ${badge[o.status]}`}>{o.status}</span>
         </div>
       </div>
-      {o.status === "PAID" && (
+      {o.status === "PAID" && !readOnly && (
         <div className="mt-3 flex flex-wrap gap-2">
           <button onClick={() => setOpen(open ? null : "ship")} className="btn btn-ghost !px-3 !py-1.5 text-sm">Add tracking</button>
           <button disabled={busy} onClick={() => confirm(`Refund ${formatMoney(o.total_cents, o.currency)} through PayPal?`) && act({ action: "refund" })} className="btn btn-ghost !px-3 !py-1.5 text-sm">Refund</button>
@@ -161,9 +170,9 @@ function OrderRow({ o, slug, onChange }: { o: Order; slug: string; onChange: (o:
   );
 }
 
-function Copilot({ slug, aiReady }: { slug: string; aiReady: boolean }) {
+function Copilot({ slug, aiReady, readOnly }: { slug: string; aiReady: boolean; readOnly: boolean }) {
   const transport = useMemo(() => new DefaultChatTransport({ api: `/api/copilot/${slug}` }), [slug]);
-  const { messages, sendMessage, status } = useChat({ transport });
+  const { messages, sendMessage, status, addToolApprovalResponse } = useChat({ transport, sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithApprovalResponses });
   const [input, setInput] = useState("");
   const box = useRef<HTMLDivElement>(null);
   useEffect(() => { box.current?.scrollTo({ top: box.current.scrollHeight }); }, [messages]);
@@ -175,7 +184,7 @@ function Copilot({ slug, aiReady }: { slug: string; aiReady: boolean }) {
       <div ref={box} className="max-h-80 space-y-3 overflow-y-auto px-4 py-3 text-sm">
         {messages.length === 0 && (
           <div className="flex flex-wrap gap-2">
-            {["What sold this week?", "Which orders still need shipping?", "How much came from AI agents?"].map((q) => (
+            {(readOnly ? ["What sold this week?", "How much came from AI agents?", "What is running low?"] : ["What sold this week?", "Which orders still need shipping?", "How much came from AI agents?"]).map((q) => (
               <button key={q} onClick={() => ask(q)} disabled={!aiReady} className="rounded-full border border-white/15 px-3 py-1.5 text-left text-xs hover:bg-white/10">{q}</button>
             ))}
           </div>
@@ -184,7 +193,24 @@ function Copilot({ slug, aiReady }: { slug: string; aiReady: boolean }) {
           <div key={m.id} className={m.role === "user" ? "text-right" : ""}>
             {m.parts.map((p, i) => {
               if (p.type === "text") return <p key={i} className={`inline-block whitespace-pre-wrap rounded-xl px-3 py-2 ${m.role === "user" ? "bg-white/10" : ""}`}>{p.text}</p>;
-              if (p.type.startsWith("tool-")) return <p key={i} className="mono text-[11px] text-card/50">↳ {p.type.slice(5)}</p>;
+              if (p.type.startsWith("tool-")) {
+                const t = p as { type: string; state?: string; input?: Record<string, unknown>; approval?: { id: string } };
+                const name = t.type.slice(5);
+                if (t.state === "approval-requested" && t.approval) {
+                  const what = name === "refund_order" ? `Refund ${String(t.input?.order_id ?? "")} in full through PayPal` : `Add ${String(t.input?.carrier ?? "")} tracking ${String(t.input?.tracking_number ?? "")} to ${String(t.input?.order_id ?? "")}`;
+                  return (
+                    <div key={i} className="rounded-xl border border-white/15 p-3 text-left">
+                      <p className="text-xs text-card/60">Needs your approval</p>
+                      <p className="mt-1">{what}</p>
+                      <div className="mt-2 flex gap-2">
+                        <button onClick={() => addToolApprovalResponse({ id: t.approval!.id, approved: true })} className="btn btn-tomato !px-3 !py-1.5 text-xs">Approve</button>
+                        <button onClick={() => addToolApprovalResponse({ id: t.approval!.id, approved: false, reason: "Owner declined" })} className="rounded-full border border-white/20 px-3 py-1.5 text-xs">Decline</button>
+                      </div>
+                    </div>
+                  );
+                }
+                return <p key={i} className="mono text-[11px] text-card/50">↳ {name}{t.state === "output-denied" ? " · declined" : ""}</p>;
+              }
               return null;
             })}
           </div>

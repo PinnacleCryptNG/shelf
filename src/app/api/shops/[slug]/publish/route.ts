@@ -1,5 +1,6 @@
 import { sql } from "@/lib/db";
 import { baseUrlFrom } from "@/lib/base-url";
+import { limited } from "@/lib/guard";
 import { isOwner } from "@/lib/owner";
 import { createCatalogProduct, paypalConfigured } from "@/lib/paypal";
 import { getShop, listProducts, logEvent } from "@/lib/store";
@@ -9,6 +10,8 @@ export const maxDuration = 120;
 export async function POST(req: Request, { params }: { params: Promise<{ slug: string }> }) {
   const shop = await getShop((await params).slug);
   if (!shop || !(await isOwner(shop))) return Response.json({ error: "Not your shop." }, { status: 403 });
+  const blocked = await limited(req, "publish");
+  if (blocked) return blocked;
   const base = baseUrlFrom(req);
   const products = await listProducts(shop.id, true);
   let synced = 0;

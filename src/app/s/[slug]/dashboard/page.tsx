@@ -5,9 +5,9 @@ import { notFound } from "next/navigation";
 import { Header } from "@/components/header";
 import { aiProvider } from "@/lib/ai";
 import { baseUrlFrom } from "@/lib/base-url";
-import { isOwner } from "@/lib/owner";
+import { canView, isOwner } from "@/lib/owner";
 import { paypalConfigured } from "@/lib/paypal";
-import { getShop, listEvents, listOrders, listProducts } from "@/lib/store";
+import { expireStaleCheckouts, getShop, listEvents, listOrders, listProducts, redactOrder } from "@/lib/store";
 import { Dashboard } from "./dashboard";
 
 export const dynamic = "force-dynamic";
@@ -16,18 +16,20 @@ export const metadata: Metadata = { title: "Shop dashboard", robots: { index: fa
 export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
   const shop = await getShop((await params).slug);
   if (!shop) notFound();
-  if (!(await isOwner(shop))) {
+  if (!(await canView(shop))) {
     return (
       <>
         <Header />
         <main className="mx-auto max-w-md px-5 pt-16 text-center">
           <h1 className="display text-3xl font-semibold">Owners only</h1>
-          <p className="mt-2 text-muted">Open this page from the device you created the shop on.</p>
+          <p className="mt-2 text-muted">Open your private owner link, or this page on the device you created the shop on.</p>
           <Link href={`/s/${shop.slug}`} className="btn btn-ghost mt-6">Visit the shop</Link>
         </main>
       </>
     );
   }
+  const owner = await isOwner(shop);
+  await expireStaleCheckouts(shop.id);
   const [orders, events, products] = await Promise.all([listOrders(shop.id), listEvents(shop.id), listProducts(shop.id, true)]);
   const base = baseUrlFrom(await headers());
   return (
@@ -36,11 +38,13 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
       <Dashboard
         shop={{ slug: shop.slug, name: shop.name, currency: shop.currency, accent: shop.accent, is_demo: shop.is_demo }}
         mcpUrl={`${base}/s/${shop.slug}/mcp`}
-        initialOrders={orders}
+        initialOrders={owner ? orders : orders.map(redactOrder)}
         initialEvents={events}
         products={products.map((p) => ({ id: p.id, name: p.name, price_cents: p.price_cents, stock: p.stock, synced: Boolean(p.paypal_product_id) }))}
         aiReady={aiProvider() !== null}
         paypalLive={paypalConfigured()}
+        readOnly={!owner}
+        ownerLink={owner && !shop.is_demo ? `${base}/s/${shop.slug}/owner?key=${shop.owner_key}` : null}
       />
     </>
   );

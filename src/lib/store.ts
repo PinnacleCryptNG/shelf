@@ -1,7 +1,7 @@
 import "server-only";
 import { nanoid } from "nanoid";
 import { one, sql } from "./db";
-import { captureOrder, createOrder, getOrder } from "./paypal";
+import { captureOrder, createOrder, getOrder, type PayPalOrder } from "./paypal";
 import { formatMoney, type Order, type OrderItem, type Product, type Shop, type ShopEvent } from "./types";
 
 export const getShop = (slug: string) => one<Shop>("select * from shops where slug = $1", [slug]);
@@ -17,6 +17,12 @@ export const listProducts = (shopId: string, all = false) =>
   sql<Product>(
     `select * from products where shop_id = $1 ${all ? "" : "and active"} order by position, created_at`,
     [shopId],
+  );
+
+export const listDirectoryProducts = () =>
+  sql<Product>(
+    `select p.* from products p join shops s on s.id = p.shop_id
+     where s.published and p.active order by p.position, p.created_at limit 5000`,
   );
 
 export const getProduct = (id: string) => one<Product>("select * from products where id = $1", [id]);
@@ -141,28 +147,118 @@ export async function createCheckout(opts: {
   return { order_id: id, paypal_order_id: pp.id, approve_url: pp.approveUrl, total: formatMoney(total, shop.currency), lines };
 }
 
+async function releaseStock(items: OrderItem[]) {
+  for (const l of items) await sql("update products set stock = stock + $2 where id = $1 and stock is not null", [l.product_id, l.quantity]);
+}
+
+/** Atomically takes stock for every line, or nothing. Prevents two buyers paying for the last item. */
+async function reserveStock(items: OrderItem[]) {
+  const taken: OrderItem[] = [];
+  for (const l of items) {
+    const ok = await one("update products set stock = stock - $2 where id = $1 and active and (stock is null or stock >= $2) returning id", [l.product_id, l.quantity]);
+    if (!ok) {
+      await releaseStock(taken);
+      return false;
+    }
+    taken.push(l);
+  }
+  return true;
+}
+
+/**
+ * Moves an approved PayPal order to PAID. Safe to call from the return URL, the webhook and
+ * get_order_status at the same time: a conditional claim lets exactly one caller capture.
+ * Cancelled or expired orders are never captured.
+ */
 export async function settlePayPalOrder(paypalOrderId: string) {
   const order = await getOrderByPayPalId(paypalOrderId);
   if (!order) return null;
-  if (["PAID", "SHIPPED", "REFUNDED"].includes(order.status)) return order;
-  const status = await getOrder(paypalOrderId);
-  if (status.status !== "APPROVED" && status.status !== "COMPLETED") return order;
-  const done = status.status === "COMPLETED" ? status : await captureOrder(paypalOrderId);
+  if (order.status !== "CREATED" && order.status !== "APPROVED") return order;
+  const claimed = await one<Order>(
+    `update orders set status = 'APPROVED', updated_at = now()
+     where id = $1 and (status = 'CREATED' or (status = 'APPROVED' and updated_at < now() - interval '5 minutes')) returning *`,
+    [order.id],
+  );
+  if (!claimed) return getOrderRow(order.id);
+  const revert = async () =>
+    (await one<Order>("update orders set status = 'CREATED', updated_at = now() where id = $1 and status = 'APPROVED' returning *", [order.id])) || order;
+
+  let pp: PayPalOrder;
+  try {
+    pp = await getOrder(paypalOrderId);
+  } catch (e) {
+    await revert();
+    throw e;
+  }
+  if (pp.status !== "APPROVED" && pp.status !== "COMPLETED") return revert();
+
+  const reserve = pp.status === "APPROVED";
+  if (reserve && !(await reserveStock(order.items))) {
+    const cancelled = await one<Order>("update orders set status = 'CANCELLED', updated_at = now() where id = $1 returning *", [order.id]);
+    await logEvent(order.shop_id, "cancelled", "Sold out before the payment went through, so PayPal did not charge the buyer.", { order_id: order.id }, "paypal");
+    return cancelled;
+  }
+
+  let done: PayPalOrder;
+  try {
+    done = reserve ? await captureOrder(paypalOrderId) : pp;
+  } catch (e) {
+    if (reserve) await releaseStock(order.items);
+    await revert();
+    throw e;
+  }
   const capture = done.purchase_units?.[0]?.payments?.captures?.[0];
-  if (done.status !== "COMPLETED" || !capture) return order;
+  if (done.status !== "COMPLETED" || !capture) {
+    if (reserve) await releaseStock(order.items);
+    return revert();
+  }
   const name = [done.payer?.name?.given_name, done.payer?.name?.surname].filter(Boolean).join(" ") || null;
   const updated = await one<Order>(
     `update orders set status = 'PAID', capture_id = $2, buyer_name = $3, buyer_email = $4, updated_at = now()
-     where id = $1 and status in ('CREATED','APPROVED') returning *`,
+     where id = $1 and status = 'APPROVED' returning *`,
     [order.id, capture.id, name, done.payer?.email_address || null],
   );
   if (updated) {
-    for (const l of order.items) {
-      await sql("update products set stock = greatest(stock - $2, 0) where id = $1 and stock is not null", [l.product_id, l.quantity]);
-    }
     await logEvent(order.shop_id, "paid", `${name || "The buyer"} paid ${formatMoney(order.total_cents, order.currency)} with PayPal`, { order_id: order.id, capture_id: capture.id }, "paypal");
   }
   return updated || (await getOrderRow(order.id));
+}
+
+/** Buyer pressed cancel in PayPal. If PayPal says they actually approved, settle instead. */
+export async function cancelCheckout(order: Order) {
+  if (order.status !== "CREATED") return order;
+  if (order.paypal_order_id) {
+    const pp = await getOrder(order.paypal_order_id).catch(() => null);
+    if (pp && (pp.status === "APPROVED" || pp.status === "COMPLETED")) return (await settlePayPalOrder(order.paypal_order_id)) || order;
+  }
+  const updated = await one<Order>("update orders set status = 'CANCELLED', updated_at = now() where id = $1 and status = 'CREATED' returning *", [order.id]);
+  if (updated) await logEvent(order.shop_id, "cancelled", "The buyer cancelled in PayPal. No money moved.", { order_id: order.id }, "paypal");
+  return updated || (await getOrderRow(order.id)) || order;
+}
+
+/** Checkouts nobody approved within 6 hours are closed so they stop cluttering the dashboard. */
+export async function expireStaleCheckouts(shopId: string) {
+  const rows = await sql<{ id: string }>(
+    "update orders set status = 'CANCELLED', updated_at = now() where shop_id = $1 and status = 'CREATED' and created_at < now() - interval '6 hours' returning id",
+    [shopId],
+  );
+  for (const r of rows) await logEvent(shopId, "cancelled", "Checkout expired without payment. No money moved.", { order_id: r.id }, "paypal");
+}
+
+/** A refund made outside Shelf (e.g. in the PayPal dashboard), reported by webhook. */
+export async function recordExternalRefund(paypalOrderId: string, refundId: string | null) {
+  const o = await one<Order>(
+    "update orders set status = 'REFUNDED', refund_id = coalesce(refund_id, $2), updated_at = now() where paypal_order_id = $1 and status in ('PAID','SHIPPED') returning *",
+    [paypalOrderId, refundId],
+  );
+  if (o) await logEvent(o.shop_id, "refunded", `Refund of ${formatMoney(o.total_cents, o.currency)} recorded from PayPal`, { order_id: o.id, refund_id: refundId }, "paypal");
+  return o;
+}
+
+/** What a visitor to a public demo dashboard may see: no buyer emails, initials only. */
+export function redactOrder(o: Order): Order {
+  const name = o.buyer_name ? o.buyer_name.split(/\s+/).map((w, i) => (i === 0 ? w : `${w[0]}.`)).join(" ") : null;
+  return { ...o, buyer_name: name, buyer_email: null };
 }
 
 export async function orderStatusForAgent(orderId: string) {

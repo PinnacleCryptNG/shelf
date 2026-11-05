@@ -35,7 +35,6 @@ export function Wizard({ aiReady }: { aiReady: boolean }) {
       setMarket({ state: "off", byName: {} });
     }
   }
-  const [email, setEmail] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
@@ -63,7 +62,7 @@ export function Wizard({ aiReady }: { aiReady: boolean }) {
   async function publish() {
     if (!draft) return;
     setErr(null); setBusy("Creating your shop…");
-    const r = await fetch("/api/shops", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ draft, source_url: mode === "url" ? url : undefined, payee_email: email }) });
+    const r = await fetch("/api/shops", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ draft, source_url: mode === "url" ? url : undefined, }) });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) { setBusy(null); return setErr(j.error || "Couldn't create the shop."); }
     setBusy("Adding products to PayPal…");
@@ -120,7 +119,6 @@ export function Wizard({ aiReady }: { aiReady: boolean }) {
         <label className="text-sm">Country<input className="field mt-1" value={draft.shop.country} onChange={(e) => setShop("country", e.target.value)} /></label>
         <label className="text-sm">Currency<input className="field mono mt-1 uppercase" maxLength={3} value={draft.shop.currency} onChange={(e) => setShop("currency", e.target.value.toUpperCase())} /></label>
         <label className="text-sm">Pickup / delivery<input className="field mt-1" value={draft.shop.ships_to} onChange={(e) => setShop("ships_to", e.target.value)} /></label>
-        <label className="text-sm sm:col-span-2">PayPal email to receive payments <span className="text-muted">(optional in the sandbox)</span><input className="field mt-1" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@business.example" /></label>
       </div>
       <h2 className="display mt-10 text-2xl font-semibold">{draft.products.length} products</h2>
       <p className="mt-1 text-sm text-muted">Tap a cell to edit it. Prices are what agents will be charged; leave stock blank for unlimited.{market.state !== "off" && " The Market column compares each price with similar products online, via Channel3."}{market.note && <span className="block text-xs">{market.note}</span>}</p>

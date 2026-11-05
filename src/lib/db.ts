@@ -69,6 +69,11 @@ create table if not exists events (
   created_at timestamptz not null default now()
 );
 create index if not exists events_shop on events(shop_id, id desc);
+create table if not exists rate_limits (
+  key text primary key,
+  window_start timestamptz not null default now(),
+  count integer not null default 0
+);
 `;
 
 

@@ -10,7 +10,7 @@ const copy: Record<string, [string, string]> = {
   PAID: ["Paid. Thank you!", "PayPal confirmed your payment and the shop has been told."],
   SHIPPED: ["On its way", "The shop has added tracking in PayPal."],
   REFUNDED: ["Refunded", "The shop refunded this order to your PayPal account."],
-  CANCELLED: ["Checkout cancelled", "You cancelled in PayPal. No money moved."],
+  CANCELLED: ["Checkout cancelled", "This checkout was closed before payment. No money moved."],
   CREATED: ["Waiting for PayPal", "This order hasn't been approved in PayPal yet."],
   APPROVED: ["Confirming payment", "PayPal approved it; we're finishing the capture."],
 };

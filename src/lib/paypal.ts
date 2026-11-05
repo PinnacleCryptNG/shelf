@@ -9,6 +9,15 @@ export function paypalConfigured() {
   return Boolean(process.env.PAYPAL_CLIENT_ID && process.env.PAYPAL_CLIENT_SECRET);
 }
 
+/** Fake payments are for local development only; production without PayPal keys must fail loudly. */
+export function mockAllowed() {
+  return process.env.NODE_ENV !== "production" || process.env.SHELF_ALLOW_MOCK === "1";
+}
+
+function assertMock() {
+  if (!mockAllowed()) throw new Error("PayPal is not configured on this server.");
+}
+
 let cached: { token: string; exp: number } | null = null;
 
 export async function accessToken() {
@@ -75,6 +84,7 @@ export type CheckoutInput = {
 export async function createOrder(input: CheckoutInput): Promise<{ id: string; approveUrl: string }> {
   const total = input.items.reduce((s, i) => s + i.unit_cents * i.quantity, 0);
   if (!paypalConfigured()) {
+    assertMock();
     const id = `MOCK-${nanoid(12).toUpperCase()}`;
     return { id, approveUrl: `${input.returnUrl.split("/pay/")[0]}/pay/mock?token=${id}` };
   }
@@ -125,12 +135,16 @@ export async function createOrder(input: CheckoutInput): Promise<{ id: string; a
 }
 
 export async function getOrder(id: string) {
-  if (id.startsWith("MOCK-")) return { id, status: "APPROVED" } as PayPalOrder;
+  if (id.startsWith("MOCK-")) {
+    assertMock();
+    return { id, status: "APPROVED" } as PayPalOrder;
+  }
   return pp<PayPalOrder>(`/v2/checkout/orders/${id}`);
 }
 
 export async function captureOrder(id: string) {
   if (id.startsWith("MOCK-")) {
+    assertMock();
     return {
       id,
       status: "COMPLETED",
@@ -147,6 +161,7 @@ export async function captureOrder(id: string) {
 }
 
 export async function refundCapture(captureId: string, note: string) {
+  if (captureId.startsWith("CAP-")) assertMock();
   if (captureId.startsWith("CAP-")) return { id: `REF-${captureId.slice(4)}`, status: "COMPLETED" };
   return pp<{ id: string; status: string }>(`/v2/payments/captures/${captureId}/refund`, {
     method: "POST",
@@ -156,7 +171,10 @@ export async function refundCapture(captureId: string, note: string) {
 }
 
 export async function addTracking(orderId: string, captureId: string, carrier: string, number: string) {
-  if (orderId.startsWith("MOCK-")) return { ok: true };
+  if (orderId.startsWith("MOCK-")) {
+    assertMock();
+    return { ok: true };
+  }
   return pp(`/v2/checkout/orders/${orderId}/track`, {
     method: "POST",
     body: { capture_id: captureId, tracking_number: number, carrier: carrier.toUpperCase().replace(/\s+/g, "_"), notify_payer: true },

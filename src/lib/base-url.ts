@@ -9,7 +9,7 @@ export function baseUrlFrom(req: Request | Headers) {
 export function agentNameFrom(req: Request) {
   const url = new URL(req.url);
   const explicit = url.searchParams.get("agent") || req.headers.get("x-agent-name");
-  if (explicit) return explicit.slice(0, 40);
+  if (explicit) return explicit.replace(/[^\p{L}\p{N} ._()-]/gu, "").trim().slice(0, 40) || "An AI agent";
   const ua = (req.headers.get("user-agent") || "").toLowerCase();
   if (ua.includes("claude")) return "Claude";
   if (ua.includes("openai") || ua.includes("chatgpt")) return "ChatGPT";

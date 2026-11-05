@@ -1,6 +1,7 @@
 import "server-only";
 import { generateObject } from "ai";
 import { lookup } from "node:dns/promises";
+import { BlockList, isIP } from "node:net";
 import { z } from "zod";
 import { model } from "./ai";
 import { PAYPAL_CURRENCIES } from "./types";
@@ -39,24 +40,65 @@ Rules:
 - Descriptions are factual and short. No marketing fluff, no emojis.
 - Tags are what a buyer would type: occasions (birthday, gift), dietary facts (vegan, gluten-free) only if stated.`;
 
-async function assertPublicHost(url: URL) {
+const blocked = new BlockList();
+for (const [a, p] of [["0.0.0.0", 8], ["10.0.0.0", 8], ["100.64.0.0", 10], ["127.0.0.0", 8], ["169.254.0.0", 16], ["172.16.0.0", 12], ["192.0.0.0", 24], ["192.168.0.0", 16], ["198.18.0.0", 15], ["224.0.0.0", 3]] as const) blocked.addSubnet(a, p, "ipv4");
+for (const [a, p] of [["::", 128], ["::1", 128], ["fc00::", 7], ["fe80::", 10], ["ff00::", 8], ["64:ff9b::", 96]] as const) blocked.addSubnet(a, p, "ipv6");
+
+export function isPrivateAddress(addr: string): boolean {
+  const mapped = addr.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/i);
+  if (mapped) return isPrivateAddress(mapped[1]);
+  const family = isIP(addr);
+  if (!family) return true;
+  return blocked.check(addr, family === 4 ? "ipv4" : "ipv6");
+}
+
+export async function assertPublicHost(url: URL) {
   if (!["http:", "https:"].includes(url.protocol)) throw new Error("Only http(s) links are supported.");
-  const { address } = await lookup(url.hostname);
-  if (/^(10\.|127\.|169\.254\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|0\.|::1|fc|fd|fe80)/i.test(address)) {
-    throw new Error("That address is not public.");
+  if (url.username || url.password) throw new Error("Links with passwords are not supported.");
+  if (url.port && !["80", "443"].includes(url.port)) throw new Error("Only standard web ports are supported.");
+  const host = url.hostname.replace(/^\[|\]$/g, "");
+  const addrs = isIP(host) ? [{ address: host }] : await lookup(host, { all: true }).catch(() => []);
+  if (!addrs.length) throw new Error("Couldn't find that website.");
+  if (addrs.some((a) => isPrivateAddress(a.address))) throw new Error("That address is not public.");
+}
+
+async function readCapped(res: Response, max: number) {
+  const reader = res.body?.getReader();
+  if (!reader) return "";
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    size += value.length;
+    if (size >= max) {
+      await reader.cancel();
+      break;
+    }
   }
+  return new TextDecoder().decode(Buffer.concat(chunks).subarray(0, max));
 }
 
 async function fetchText(url: string, accept = "text/html") {
-  const u = new URL(url);
-  await assertPublicHost(u);
-  const res = await fetch(u, {
-    headers: { "user-agent": "Mozilla/5.0 (compatible; ShelfImporter/1.0; +https://shelf.shop)", accept },
-    redirect: "follow",
-    signal: AbortSignal.timeout(12_000),
-  });
-  if (!res.ok) throw new Error(`The page answered ${res.status}.`);
-  return (await res.text()).slice(0, 2_000_000);
+  let u = new URL(url);
+  for (let hop = 0; hop < 5; hop++) {
+    await assertPublicHost(u);
+    const res = await fetch(u, {
+      headers: { "user-agent": "Mozilla/5.0 (compatible; ShelfImporter/1.0; +https://shelf-pinnaclecryptngs-projects.vercel.app)", accept },
+      redirect: "manual",
+      signal: AbortSignal.timeout(12_000),
+    });
+    const next = res.headers.get("location");
+    if (res.status >= 300 && res.status < 400 && next) {
+      await res.body?.cancel();
+      u = new URL(next, u);
+      continue;
+    }
+    if (!res.ok) throw new Error(`The page answered ${res.status}.`);
+    return readCapped(res, 2_000_000);
+  }
+  throw new Error("That link redirects too many times.");
 }
 
 function pageDigest(html: string, base: string) {
