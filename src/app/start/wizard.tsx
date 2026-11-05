@@ -1,6 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { CatalogGrid } from "@/components/catalog-grid";
 
 type DraftProduct = { name: string; description: string; price: number; category: string; tags: string[]; image_url: string | null; stock?: number | null };
 type Draft = { shop: { name: string; tagline: string; about: string; city: string; country: string; currency: string; ships_to: string }; products: DraftProduct[] };
@@ -55,7 +56,6 @@ export function Wizard({ aiReady }: { aiReady: boolean }) {
   }
 
   const setShop = (k: keyof Draft["shop"], v: string) => setDraft((d) => d && { ...d, shop: { ...d.shop, [k]: v } });
-  const setProduct = (i: number, patch: Partial<DraftProduct>) => setDraft((d) => d && { ...d, products: d.products.map((p, j) => (j === i ? { ...p, ...patch } : p)) });
 
   if (!draft) {
     return (
@@ -107,19 +107,8 @@ export function Wizard({ aiReady }: { aiReady: boolean }) {
         <label className="text-sm sm:col-span-2">PayPal email to receive payments <span className="text-muted">(optional in the sandbox)</span><input className="field mt-1" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@business.example" /></label>
       </div>
       <h2 className="display mt-10 text-2xl font-semibold">{draft.products.length} products</h2>
-      <ul className="mt-4 space-y-3">
-        {draft.products.map((p, i) => (
-          <li key={i} className="tag grid gap-3 p-4 pl-8 sm:grid-cols-[1fr_120px_auto]">
-            <div className="space-y-2">
-              <input className="field font-semibold" value={p.name} onChange={(e) => setProduct(i, { name: e.target.value })} />
-              <textarea className="field min-h-16 text-sm" value={p.description} onChange={(e) => setProduct(i, { description: e.target.value })} />
-              <p className="mono text-[11px] text-muted">{p.category} · {p.tags.join(", ")}</p>
-            </div>
-            <label className="text-xs text-muted">Price ({draft.shop.currency})<input className="field mono mt-1 text-ink" type="number" step="0.01" min="0" value={p.price} onChange={(e) => setProduct(i, { price: Number(e.target.value) })} /></label>
-            <button className="self-start text-sm text-muted hover:text-tomato" onClick={() => setDraft({ ...draft, products: draft.products.filter((_, j) => j !== i) })}>Remove</button>
-          </li>
-        ))}
-      </ul>
+      <p className="mt-1 text-sm text-muted">Tap a cell to edit it. Prices are what agents will be charged; leave stock blank for unlimited.</p>
+      <div className="mt-4"><CatalogGrid rows={draft.products} currency={draft.shop.currency} onChange={(products) => setDraft((d) => d && { ...d, products })} /></div>
       <div className="sticky bottom-3 mt-8 flex flex-wrap items-center gap-3 rounded-2xl border border-line bg-paper/95 p-3 backdrop-blur">
         <button onClick={publish} disabled={!!busy || !draft.products.length} className="btn btn-tomato">{busy || "Publish to PayPal & open to agents"}</button>
         <button onClick={() => setDraft(null)} disabled={!!busy} className="btn btn-ghost">Start over</button>
