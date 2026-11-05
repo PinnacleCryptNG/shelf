@@ -33,7 +33,7 @@ export default async function Receipt({ params }: { params: Promise<{ slug: stri
             {order.items.map((i) => <li key={i.product_id} className="flex justify-between"><span>{i.quantity} × {i.name}</span><span className="mono">{formatMoney(i.quantity * i.unit_cents, order.currency)}</span></li>)}
           </ul>
           <div className="mt-3 flex justify-between border-t border-line pt-3 font-semibold"><span>Total</span><span className="mono">{formatMoney(order.total_cents, order.currency)}</span></div>
-          {order.channel === "agent" && <p className="mt-4 text-sm text-muted">Ordered for you by <strong className="text-ink">{order.agent_name || "an AI agent"}</strong>. You approved it in PayPal.</p>}
+          {order.channel === "agent" && <p className="mt-4 text-sm text-muted">Ordered for you by <strong className="text-ink">{order.agent_name || "an AI agent"}</strong>.{["PAID", "SHIPPED", "REFUNDED", "APPROVED"].includes(order.status) && " You approved it in PayPal."}</p>}
           {order.tracking && <p className="mono mt-3 text-sm">Tracking: {order.tracking.carrier} {order.tracking.number}</p>}
         </div>
         <div className="mt-6 flex gap-3">
