@@ -112,10 +112,12 @@ export async function createCheckout(opts: {
   for (const it of opts.items) {
     const p = products.find((x) => x.id === it.product_id);
     if (!p) throw new CheckoutError(`Unknown product_id ${it.product_id} for ${shop.name}. Call search_products first.`);
-    const qty = Math.max(1, Math.min(20, Math.floor(it.quantity || 1)));
-    if (p.stock !== null && p.stock < qty) throw new CheckoutError(`Only ${p.stock} left of ${p.name}.`);
     const existing = lines.find((l) => l.product_id === p.id);
-    if (existing) existing.quantity += qty;
+    const qty = Math.max(1, Math.floor(it.quantity || 1));
+    const combined = (existing?.quantity || 0) + qty;
+    if (combined > 20) throw new CheckoutError(`At most 20 of ${p.name} per order.`);
+    if (p.stock !== null && p.stock < combined) throw new CheckoutError(`Only ${p.stock} left of ${p.name}.`);
+    if (existing) existing.quantity = combined;
     else lines.push({ product_id: p.id, name: p.name, quantity: qty, unit_cents: p.price_cents });
   }
   const total = lines.reduce((s, l) => s + l.unit_cents * l.quantity, 0);
