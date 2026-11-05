@@ -29,7 +29,7 @@ export function Basket({ slug, accent, products, categories }: { slug: string; a
     <div className="grid gap-10 pt-10 lg:grid-cols-[1fr_340px] [&>*]:min-w-0">
       <section>
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="display text-2xl">On the shelf <span className="mono ml-1 align-middle text-sm text-muted">{shown.length}</span></h2>
+          <h2 className="display text-[1.7rem]">On the shelf <span className="ml-1 align-middle text-sm font-medium text-muted">{shown.length}</span></h2>
           {categories.length > 1 && (
             <div className="seg max-w-full overflow-x-auto [scrollbar-width:none]" role="group" aria-label="Filter by category">
               {[null, ...categories].map((c) => (
@@ -39,18 +39,18 @@ export function Basket({ slug, accent, products, categories }: { slug: string; a
           )}
         </div>
         {shown.length === 0 && <p className="panel p-8 text-center text-muted">Nothing on this shelf yet.</p>}
-        <ul className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-3">
+        <ul className="grid grid-cols-2 gap-x-3 gap-y-8 sm:gap-x-5 sm:gap-y-10 xl:grid-cols-3">
           {shown.map((p, i) => {
             const out = p.stock === 0;
             const low = !out && p.stock !== null && p.stock <= 3;
             const n = cart[p.id] || 0;
             return (
-              <li key={p.id} id={p.id} className={`rise group panel flex flex-col overflow-hidden transition duration-300 hover:shadow-[0_24px_48px_-30px_rgba(15,16,18,.35)] ${n ? "ring-2 ring-ink" : ""}`} style={{ animationDelay: `${Math.min(i, 12) * 40}ms` }}>
-                <div className="relative aspect-[4/3] overflow-hidden">
+              <li key={p.id} id={p.id} className="rise group flex flex-col" style={{ animationDelay: `${Math.min(i, 12) * 40}ms` }}>
+                <div className={`relative aspect-[4/3] overflow-hidden rounded-[10px] bg-card transition ${n ? "ring-2 ring-ink ring-offset-2 ring-offset-paper" : ""}`}>
                   <ProductArt name={p.name} accent={accent} image={p.image_url} className={`transition duration-500 group-hover:scale-[1.04] ${out ? "grayscale" : ""}`} />
                   {(out || low) && <span className={`absolute left-3 top-3 rounded-md px-2 py-1 text-[11px] font-semibold ${out ? "bg-ink text-white" : "bg-white text-[#c2410c]"}`}>{out ? "Sold out" : `Only ${p.stock} left`}</span>}
                 </div>
-                <div className="flex flex-1 flex-col p-3 sm:p-4">
+                <div className="price-tag mt-2.5 flex flex-1 flex-col !p-3 sm:!px-4 sm:!py-3.5">
                   <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
                     <h3 className="text-[14px] font-semibold leading-snug sm:text-base">{p.name}</h3>
                     <span className="mono shrink-0 text-[12px] sm:text-[13px]">{formatMoney(p.price_cents, p.currency)}</span>
@@ -75,7 +75,7 @@ export function Basket({ slug, accent, products, categories }: { slug: string; a
         </ul>
       </section>
       <aside className="lg:sticky lg:top-20 lg:self-start">
-        <div className="panel p-5">
+        <div className="perf-top bg-[#fbfaf6] p-5 pt-7 shadow-[0_1px_0_var(--line),0_24px_48px_-32px_rgba(15,16,18,.45)]">
           <div className="flex items-baseline justify-between"><h2 className="display text-xl">Basket</h2>{count > 0 && <span className="mono text-xs text-muted">{count} item{count > 1 ? "s" : ""}</span>}</div>
           {lines.length === 0 ? (
             <div className="mt-4 rounded-xl border border-dashed border-line p-5 text-center text-sm text-muted">Your basket is empty.<br />Add something from the shelf.</div>

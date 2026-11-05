@@ -99,7 +99,8 @@ export function AgentChat({ aiReady, model, resumeOrder = null }: { aiReady: boo
   return (
     <div className="flex min-h-[calc(100dvh-72px)] flex-col">
       <div className="rise pt-8">
-        <h1 className="display text-[2.4rem] leading-[1.05] sm:text-[3rem]">Watch an AI agent<br className="hidden sm:block" /> shop small.</h1>
+        <span className="aisle"><b>AI</b><span>Shopping agent</span></span>
+        <h1 className="display mt-5 text-[2.4rem] leading-[1.02] sm:text-[3.2rem]">Watch an AI agent<br className="hidden sm:block" /> shop small.</h1>
         <p className="mt-3 max-w-xl text-muted">It only knows Shelf&apos;s public MCP address, the same one Claude or ChatGPT would use. You approve any payment in PayPal.</p>
         {aiReady && <p className="mono mt-3 flex items-center gap-2 text-[11px] text-muted"><span className="h-1.5 w-1.5 rounded-full bg-moss" />{model} · connected to /mcp</p>}
       </div>
@@ -111,7 +112,7 @@ export function AgentChat({ aiReady, model, resumeOrder = null }: { aiReady: boo
         )}
         {messages.map((m) => (
           <div key={m.id} className={m.role === "user" ? "flex justify-end" : ""}>
-            <div className={m.role === "user" ? "rise max-w-[85%] rounded-2xl rounded-br-md bg-ink px-4 py-2.5 text-white" : "w-full"}>
+            <div className={m.role === "user" ? "rise max-w-[85%] rounded-[14px] rounded-br-[4px] bg-ink px-4 py-2.5 text-white" : "w-full"}>
               {m.parts.map((p, i) => {
                 if (p.type === "text") return <p key={i} className="whitespace-pre-wrap leading-relaxed">{p.text}</p>;
                 if (p.type === "dynamic-tool" || p.type.startsWith("tool-")) return <Tool key={i} part={p as unknown as ToolPart} onApproved={(id) => { setPending(null); ask(`I've approved order ${id} in PayPal. Is it paid?`); }} />;
@@ -124,7 +125,7 @@ export function AgentChat({ aiReady, model, resumeOrder = null }: { aiReady: boo
         {error && <p role="alert" className="rounded-lg bg-[#ff4a24]/10 px-3 py-2 text-sm text-[#c2290a]">{error.message}</p>}
         <div ref={end} />
       </div>
-      <form onSubmit={(e) => { e.preventDefault(); ask(input); }} className="sticky bottom-3 flex gap-2 rounded-2xl border border-line bg-card/95 p-1.5 shadow-[0_18px_40px_-24px_rgba(15,16,18,.45)] backdrop-blur focus-within:border-ink">
+      <form onSubmit={(e) => { e.preventDefault(); ask(input); }} className="sticky bottom-3 flex gap-2 rounded-[14px] border border-line bg-card/95 p-1.5 shadow-[0_18px_40px_-24px_rgba(15,16,18,.45)] backdrop-blur focus-within:border-ink">
         <input value={input} onChange={(e) => setInput(e.target.value)} disabled={!aiReady} placeholder={aiReady ? "What are you looking for?" : "The demo agent needs an AI key on the server"} aria-label="Ask the shopping agent" className="min-w-0 flex-1 bg-transparent px-3 text-[15px] outline-none" />
         <button disabled={busy || !input.trim()} className="btn btn-tomato !py-2">Ask</button>
       </form>

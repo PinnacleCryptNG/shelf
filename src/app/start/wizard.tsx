@@ -90,7 +90,8 @@ export function Wizard({ aiReady }: { aiReady: boolean }) {
     return (
       <section className="rise pt-8">
         {steps}
-        <h1 className="display mt-8 text-[2.4rem] leading-[1.05] sm:text-[3.2rem]">Open your shop to AI agents.</h1>
+        <span className="aisle mt-8"><b>01</b><span>Import</span></span>
+        <h1 className="display mt-5 text-[2.4rem] leading-[1.02] sm:text-[3.2rem]">Open your shop to AI agents.</h1>
         <p className="mt-3 max-w-xl text-[17px] text-muted">Show Shelf what you sell. It drafts the catalogue; you check it before anything goes live.</p>
         <div className="panel relative mt-8 overflow-hidden p-5 sm:p-6">
           <div className="seg flex-wrap" role="group" aria-label="Import from">
@@ -136,7 +137,8 @@ export function Wizard({ aiReady }: { aiReady: boolean }) {
   return (
     <section className="rise pt-8">
       {steps}
-      <h1 className="display mt-8 text-[2.3rem] leading-[1.05] sm:text-[2.9rem]">Here&apos;s what Shelf found.</h1>
+      <span className="aisle mt-8"><b>02</b><span>Review</span></span>
+      <h1 className="display mt-5 text-[2.3rem] leading-[1.02] sm:text-[2.9rem]">Here&apos;s what Shelf found.</h1>
       <p className="mt-3 max-w-xl text-muted">Check the details and fix anything before it goes live.</p>
       <div className="panel mt-8 grid gap-4 p-5 sm:grid-cols-2 sm:p-6">
         <p className="label sm:col-span-2">Shop details</p>

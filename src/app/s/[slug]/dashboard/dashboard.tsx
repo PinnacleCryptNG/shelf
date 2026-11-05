@@ -64,8 +64,8 @@ export function Dashboard({ shop, mcpUrl, initialOrders, initialEvents, products
     <main className="mx-auto w-full max-w-6xl px-5 pb-24 sm:px-8">
       <div className="rise flex flex-wrap items-end justify-between gap-4 pt-6">
         <div>
-          <p className="label flex items-center gap-2"><span className="ping h-2 w-2 rounded-full bg-[#ff4a24]" />Live dashboard{!paypalLive && " · PayPal mock mode"}</p>
-          <h1 className="display mt-2 text-[2.3rem] leading-tight sm:text-[2.8rem]">{shop.name}</h1>
+          <span className="aisle"><b><span className="ping h-2 w-2 rounded-full bg-laser" /></b><span>Live dashboard{!paypalLive && " · PayPal mock mode"}</span></span>
+          <h1 className="display mt-4 text-[2.3rem] leading-[1.02] sm:text-[2.9rem]">{shop.name}</h1>
         </div>
         <div className="w-full max-w-md"><CopyField label="Agents connect at" value={mcpUrl} /></div>
       </div>

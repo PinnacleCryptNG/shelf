@@ -35,7 +35,8 @@ export default async function Agents() {
       <main className="mx-auto w-full max-w-6xl px-5 sm:px-8">
         <section className="grid gap-10 pb-6 pt-10 lg:grid-cols-[1.1fr_1fr] lg:pt-16 [&>*]:min-w-0">
           <div className="rise">
-            <h1 className="display text-[2.6rem] leading-[1.04] sm:text-[3.4rem]">Every small shop.<br />One MCP address.</h1>
+            <span className="aisle"><b>MCP</b><span>For developers</span></span>
+            <h1 className="display mt-5 text-[2.6rem] leading-[1.02] sm:text-[3.4rem]">Every small shop.<br />One MCP address.</h1>
             <p className="mt-5 max-w-xl text-[17px] leading-relaxed text-muted">Shelf speaks the Model Context Protocol over streamable HTTP. Add one URL to Claude, ChatGPT, Cursor or your own agent and it can browse and buy from every shop here. No API key.</p>
             <div className="mt-8 max-w-xl"><CopyField label="Directory" value={`${base}/mcp`} /></div>
             <p className="mt-4 text-sm text-muted">Want to see it first? <Link href="/agent" className="font-semibold text-ink underline-offset-4 hover:underline">Watch the demo agent shop →</Link></p>

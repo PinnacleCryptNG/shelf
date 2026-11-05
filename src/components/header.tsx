@@ -21,31 +21,35 @@ export function Header({ right }: { right?: React.ReactNode }) {
 }
 
 export function Footer() {
+  const cols: [string, [string, string][]][] = [
+    ["Shops", [["Open your shop", "/start"], ["Fernhill Bakehouse", "/s/fernhill-bakehouse"], ["Kiln & Tide", "/s/kiln-and-tide"], ["Mori Tea Works", "/s/mori-tea-works"]]],
+    ["Agents", [["Try the agent", "/agent"], ["MCP directory", "/agents"], ["llms.txt example", "/s/kiln-and-tide/llms.txt"]]],
+    ["Project", [["GitHub", "https://github.com/PinnacleCryptNG/shelf"], ["PayPal AI Hackathon", "https://paypalaihackathon.devpost.com/"]]],
+  ];
   return (
-    <footer className="mt-28 bg-graphite text-[#f3f3ef]">
-      <div className="mx-auto grid w-full max-w-6xl gap-10 px-5 pb-10 pt-14 sm:px-8 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
-        <div>
-          <Logo tone="light" />
-          <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/60">Small shops, open to AI agents. Buyers approve every payment in PayPal.</p>
+    <footer className="mt-32 bg-graphite px-5 pb-10 pt-16 text-ink sm:px-8">
+      <div className="perf-top mx-auto w-full max-w-4xl bg-[#fbfaf6] px-6 pb-8 pt-10 sm:px-12">
+        <div className="flex flex-col items-center text-center">
+          <Logo />
+          <p className="mt-3 max-w-sm text-[14px] text-muted">Small shops, open to AI agents. Buyers approve every payment in PayPal.</p>
         </div>
-        {[
-          ["Shops", [["Open your shop", "/start"], ["Fernhill Bakehouse", "/s/fernhill-bakehouse"], ["Kiln & Tide", "/s/kiln-and-tide"]]],
-          ["Agents", [["Try the agent", "/agent"], ["MCP directory", "/agents"], ["llms.txt example", "/s/kiln-and-tide/llms.txt"]]],
-          ["Project", [["GitHub", "https://github.com/PinnacleCryptNG/shelf"], ["PayPal AI Hackathon", "https://paypalaihackathon.devpost.com/"]]],
-        ].map(([h, links]) => (
-          <div key={h as string}>
-            <p className="label !text-white/40">{h as string}</p>
-            <ul className="mt-3 space-y-2 text-sm">
-              {(links as string[][]).map(([t, href]) => (
-                <li key={t}>{href.startsWith("http") ? <a href={href} className="text-white/75 transition hover:text-white">{t}</a> : <Link href={href} className="text-white/75 transition hover:text-white">{t}</Link>}</li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
-      <div className="mx-auto flex w-full max-w-6xl flex-col justify-between gap-2 border-t border-white/10 px-5 py-5 text-xs text-white/45 sm:flex-row sm:px-8">
-        <p>Payments run in the PayPal sandbox. No real money moves.</p>
-        <p>MIT licensed · Built for the PayPal AI Hackathon</p>
+        <div className="mt-10 grid gap-8 border-t border-dashed border-line pt-8 sm:grid-cols-3">
+          {cols.map(([h, links]) => (
+            <div key={h}>
+              <p className="label">{h}</p>
+              <ul className="mt-3 space-y-2 text-[14px]">
+                {links.map(([t, href]) => (
+                  <li key={t}>{href.startsWith("http") ? <a href={href} className="transition hover:text-laser">{t}</a> : <Link href={href} className="transition hover:text-laser">{t}</Link>}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+        <div className="mt-10 border-t border-dashed border-line pt-6 text-center">
+          <p className="text-[12px] font-semibold uppercase tracking-[.25em]">Thank you for shopping small</p>
+          <div className="barcode mx-auto mt-4 w-56 text-ink/85" aria-hidden />
+          <p className="mt-3 text-[12px] text-muted">Sandbox payments only · MIT licensed · PayPal AI Hackathon</p>
+        </div>
       </div>
     </footer>
   );
