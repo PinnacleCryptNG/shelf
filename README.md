@@ -26,6 +26,11 @@ A built-in demo agent at `/agent` connects to Shelf's public MCP endpoint with `
 - An order only counts as `PAID` after a PayPal capture returns `COMPLETED`.
 - The URL importer only fetches public http(s) addresses (private IP ranges are blocked).
 
+## Sponsor tools
+
+- **AG Grid (Community):** the editable catalogue grid where owners review and fix the AI's draft before publishing, and the sortable products table on the dashboard (price, units sold, low stock, PayPal Catalog sync).
+- **Channel3:** during import, every drafted product is searched on Channel3 in the shop's market and currency. The grid shows the going price range and whether the owner's price is above, below or on par. Optional: set `CHANNEL3_API_KEY`.
+
 ## Stack
 
 Next.js 15 (App Router) · TypeScript · Tailwind v4 · Vercel AI SDK (Anthropic / Google) · `@modelcontextprotocol/sdk` · `@paypal/agent-toolkit` · PayPal REST (Orders v2, Catalog, Tracking, Refunds, Webhooks) · Postgres (Neon) or embedded PGlite.

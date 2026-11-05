@@ -18,7 +18,7 @@ async function searchOne(query: string, currency: string, country?: string): Pro
   const res = await fetch(API, {
     method: "POST",
     headers: { "x-api-key": process.env.CHANNEL3_API_KEY!, "content-type": "application/json" },
-    body: JSON.stringify({ query, limit: 10, currency, ...(country ? { country } : {}) }),
+    body: JSON.stringify({ query, limit: 10, config: { currency, ...(country ? { country } : {}) } }),
     signal: AbortSignal.timeout(12000),
   });
   if (!res.ok) throw new Error(`Channel3 ${res.status}: ${(await res.text()).slice(0, 200)}`);
