@@ -70,7 +70,7 @@ function Tool({ part, onApproved }: { part: ToolPart; onApproved: (id: string) =
   );
 }
 
-export function AgentChat({ aiReady, model }: { aiReady: boolean; model: string }) {
+export function AgentChat({ aiReady, model, resumeOrder = null }: { aiReady: boolean; model: string; resumeOrder?: string | null }) {
   const transport = useMemo(() => new DefaultChatTransport({ api: "/api/agent" }), []);
   const { messages, sendMessage, status, error } = useChat<UIMessage>({ transport });
   const [input, setInput] = useState("");
@@ -79,6 +79,14 @@ export function AgentChat({ aiReady, model }: { aiReady: boolean; model: string 
   useEffect(() => { end.current?.scrollIntoView({ behavior: "smooth", block: "end" }); }, [messages]);
   const busy = status === "submitted" || status === "streaming";
   const ask = (t: string) => { if (t.trim() && !busy) { sendMessage({ text: t }); setInput(""); } };
+
+  const resumed = useRef(false);
+  useEffect(() => {
+    if (!resumeOrder || !aiReady || resumed.current) return;
+    resumed.current = true;
+    sendMessage({ text: `I've approved order ${resumeOrder} in PayPal. Is it paid?` });
+    window.history.replaceState(null, "", "/agent");
+  }, [resumeOrder, aiReady, sendMessage]);
 
   useEffect(() => {
     if (!pending) return;

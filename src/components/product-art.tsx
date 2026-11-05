@@ -19,10 +19,10 @@ const SHAPES: ((a: string, b: string) => React.ReactNode)[] = [
   (a, b) => (<><path d="M30 70 L60 28 L90 70 Z" fill={a} /><path d="M38 60 L82 60" stroke={b} strokeWidth="5" /></>),
 ];
 
-export function ProductArt({ name, accent, image, className = "" }: { name: string; accent: string; image?: string | null; className?: string }) {
+export function ProductArt({ name, accent, image, className = "", eager = false }: { name: string; accent: string; image?: string | null; className?: string; eager?: boolean }) {
   if (image) {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={image} alt="" className={`h-full w-full object-cover ${className}`} loading="lazy" />;
+    return <img src={image} alt="" className={`h-full w-full object-cover ${className}`} loading={eager ? "eager" : "lazy"} decoding="async" />;
   }
   const h = hash(name);
   const tone = TONES[h % TONES.length];

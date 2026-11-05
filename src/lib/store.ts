@@ -80,7 +80,7 @@ export function publicProduct(p: Product, shop: Shop, base: string) {
     tags: p.tags,
     in_stock: p.stock === null ? true : p.stock > 0,
     stock: p.stock,
-    image_url: p.image_url,
+    image_url: p.image_url?.startsWith("/") ? `${base}${p.image_url}` : p.image_url,
     url: `${base}/s/${shop.slug}#${p.id}`,
     shop: shop.slug,
   };

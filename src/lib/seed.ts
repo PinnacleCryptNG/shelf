@@ -52,9 +52,26 @@ const SHOPS: {
   },
 ];
 
+const IMAGES: Record<string, string[]> = {
+  shop_fernhill: ["country-sourdough", "seeded-rye", "cardamom-buns", "chocolate-cookies", "birthday-sponge", "lemon-drizzle", "sourdough-starter"],
+  shop_kiln: ["tide-mug", "pour-over-dripper", "breakfast-bowls", "bud-vase", "serving-platter"],
+  shop_mori: ["uji-matcha", "sencha", "hojicha", "chasen-whisk", "matcha-kit"],
+};
+const imageFor = (shopId: string, pos: number) => (IMAGES[shopId]?.[pos] ? `/products/${IMAGES[shopId][pos]}.webp` : null);
+
+async function backfillImages(q: Query) {
+  const ids = Object.entries(IMAGES).flatMap(([shop, list]) => list.map((_, i) => `${shop.replace("shop_", "p_")}_${i}`));
+  const missing = await q("select id from products where id = any($1) and image_url is null", [ids]);
+  for (const r of missing) {
+    const id = String(r.id);
+    const [shopKey, pos] = [id.slice(0, id.lastIndexOf("_")).replace("p_", "shop_"), Number(id.slice(id.lastIndexOf("_") + 1))];
+    await q("update products set image_url = $2 where id = $1 and image_url is null", [id, imageFor(shopKey, pos)]);
+  }
+}
+
 export async function seedDemo(q: Query) {
   const existing = await q("select count(*)::int as n from shops where is_demo = true");
-  if (Number(existing[0]?.n) >= SHOPS.length) return;
+  if (Number(existing[0]?.n) >= SHOPS.length) return backfillImages(q);
   for (const s of SHOPS) {
     await q(
       `insert into shops (id, slug, name, tagline, about, city, country, currency, owner_key, ships_to, accent, is_demo, published)
@@ -65,9 +82,9 @@ export async function seedDemo(q: Query) {
     for (const [name, description, price, category, tags, stock] of s.products) {
       const id = `${s.id.replace("shop_", "p_")}_${pos}`;
       await q(
-        `insert into products (id, shop_id, name, description, price_cents, currency, category, tags, stock, position, paypal_product_id)
-         values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) on conflict (id) do nothing`,
-        [id, s.id, name, description, Math.round(price * 100), s.currency, category, tags, stock, pos, null],
+        `insert into products (id, shop_id, name, description, price_cents, currency, category, tags, stock, position, paypal_product_id, image_url)
+         values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) on conflict (id) do nothing`,
+        [id, s.id, name, description, Math.round(price * 100), s.currency, category, tags, stock, pos, null, imageFor(s.id, pos)],
       );
       pos++;
     }

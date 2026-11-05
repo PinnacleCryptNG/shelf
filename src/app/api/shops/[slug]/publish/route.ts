@@ -19,7 +19,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
   for (const p of products) {
     if (p.paypal_product_id) { synced++; continue; }
     try {
-      const ppId = await createCatalogProduct({ name: p.name, description: p.description, imageUrl: p.image_url, homeUrl: `${base}/s/${shop.slug}`, ref: p.id });
+      const ppId = await createCatalogProduct({ name: p.name, description: p.description, imageUrl: p.image_url?.startsWith("/") ? `${base}${p.image_url}` : p.image_url, homeUrl: `${base}/s/${shop.slug}`, ref: p.id });
       await sql("update products set paypal_product_id = $2 where id = $1", [p.id, ppId]);
       synced++;
     } catch (e) {

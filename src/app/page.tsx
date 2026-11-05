@@ -52,35 +52,36 @@ export default async function Home() {
       <Header />
       <LiveRefresh />
       <main>
-        <section className="mx-auto grid w-full max-w-6xl items-center gap-12 px-5 pb-16 pt-10 sm:px-8 lg:grid-cols-[1.05fr_1fr] lg:gap-16 lg:pb-24 lg:pt-16 [&>*]:min-w-0">
-          <div className="rise">
-            <h1 className="display text-[2.7rem] leading-[1.02] sm:text-[3.6rem] lg:text-[4rem]">
-              Small shops,<br />open to <span className="text-[#ff4a24]">AI agents</span>.
+        <section className="mx-auto w-full max-w-6xl px-5 pt-10 sm:px-8 lg:pt-16">
+          <div className="grid gap-8 lg:grid-cols-[auto_1fr] lg:items-end lg:gap-16 [&>*]:min-w-0">
+            <h1 className="display text-[2.8rem] leading-[1] sm:text-[4rem] lg:text-[4.4rem] lg:whitespace-nowrap">
+              <span className="line-mask"><span>Small shops,</span></span>
+              <span className="line-mask"><span className="[animation-delay:90ms]">open to <span className="text-laser">AI agents</span>.</span></span>
             </h1>
-            <p className="mt-6 max-w-lg text-[17px] leading-relaxed text-muted">
-              Paste your website, Instagram or a photo of your menu. Shelf turns it into a catalogue Claude, ChatGPT and any MCP agent can search and buy from. Every payment is approved by the buyer in PayPal.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/start" className="btn btn-tomato">Open your shop</Link>
-              <Link href="/agent" className="btn btn-ghost">Watch an agent buy</Link>
+            <div className="rise [animation-delay:200ms] lg:pb-2">
+              <p className="max-w-md text-[17px] leading-relaxed text-muted">
+                Shelf turns your website, Instagram or a photo of your menu into a catalogue that Claude, ChatGPT and other agents can search and buy from. The buyer approves every payment in PayPal.
+              </p>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Link href="/start" className="btn btn-tomato">Open your shop</Link>
+                <Link href="/agent" className="btn btn-ghost">Watch an agent buy</Link>
+              </div>
             </div>
-            <p className="mt-10 flex flex-wrap items-center gap-x-5 gap-y-2 text-[13px] text-muted">
-              <span>Works with</span>
-              {["Claude", "ChatGPT", "Cursor", "any MCP client"].map((n) => <span key={n} className="font-semibold text-ink/70">{n}</span>)}
-            </p>
           </div>
-          <div className="rise [animation-delay:120ms]"><AgentScene items={scene} shopCount={shopsLive.size} productCount={live.length} /></div>
+          <div className="rise mt-12 [animation-delay:260ms] lg:mt-16">
+            <AgentScene items={scene} shopCount={shopsLive.size} productCount={live.length} />
+          </div>
         </section>
 
-        <Ticker items={ticker} />
+        <div className="mt-14"><Ticker items={ticker} /></div>
 
         <section className="mx-auto w-full max-w-6xl px-5 pt-24 sm:px-8">
           <Reveal><h2 className="display max-w-xl text-[2.1rem] leading-[1.08] sm:text-[2.6rem]">From a menu photo to an agent-ready shop in minutes.</h2></Reveal>
-          <ol className="mt-12 grid gap-4 md:grid-cols-3">
+          <ol className="mt-12 grid gap-10 md:grid-cols-3 md:gap-8">
             {steps.map((s, i) => (
-              <Reveal as="li" key={s.n} delay={i * 90} className="panel flex flex-col p-6">
+              <Reveal as="li" key={s.n} delay={i * 90} className="flex flex-col border-t border-ink pt-5">
                 <StepArt i={i} />
-                <span className="mono mt-6 text-[12px] text-[#ff4a24]">{s.n}</span>
+                <span className="mono mt-6 text-[12px] text-laser">{s.n}</span>
                 <h3 className="mt-1.5 text-[19px] font-semibold tracking-tight">{s.t}</h3>
                 <p className="mt-2 text-[15px] leading-relaxed text-muted">{s.d}</p>
               </Reveal>
@@ -124,20 +125,26 @@ export default async function Home() {
             <h2 className="display text-[2.1rem] leading-[1.08] sm:text-[2.6rem]">On the shelf today</h2>
             <Link href="/start" className="text-sm font-semibold underline-offset-4 hover:underline">Add your shop →</Link>
           </Reveal>
-          <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="mt-10 border-t border-line">
             {shops.slice(0, 6).map((s, i) => {
-              const own = products.filter((p) => p.shop_id === s.id).slice(0, 3);
+              const own = products.filter((p) => p.shop_id === s.id).slice(0, 4);
               return (
-                <Reveal as="li" key={s.id} delay={i * 80}>
-                  <Link href={`/s/${s.slug}`} className="group panel block overflow-hidden transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_48px_-28px_rgba(15,16,18,.35)]">
-                    <div className="grid grid-cols-3 gap-px bg-line">
-                      {own.map((p) => <div key={p.id} className="aspect-square overflow-hidden bg-card"><ProductArt name={p.name} accent={s.accent} image={p.image_url} className="transition duration-500 group-hover:scale-105" /></div>)}
-                    </div>
-                    <div className="p-5">
+                <Reveal as="li" key={s.id} delay={i * 60} className="border-b border-line">
+                  <Link href={`/s/${s.slug}`} className="group grid gap-5 py-7 md:grid-cols-[260px_1fr] md:gap-10 [&>*]:min-w-0">
+                    <div className="flex flex-col">
                       <p className="label">{[s.city, s.country].filter(Boolean).join(" · ")}</p>
-                      <h3 className="mt-2 text-[20px] font-semibold tracking-tight">{s.name}</h3>
-                      <p className="mt-1 line-clamp-1 text-sm text-muted">{s.tagline}</p>
-                      <p className="mt-4 flex items-center justify-between text-[13px]"><span className="text-muted">{s.product_count} products · {s.currency}</span><span className="font-semibold transition group-hover:translate-x-0.5">Visit →</span></p>
+                      <h3 className="mt-2 text-[22px] font-semibold tracking-tight">{s.name}</h3>
+                      <p className="mt-1.5 line-clamp-2 text-[15px] leading-relaxed text-muted">{s.tagline}</p>
+                      <p className="mt-auto flex items-center gap-4 pt-4 text-[13px]"><span className="text-muted">{s.product_count} products · {s.currency}</span><span className="font-semibold transition group-hover:translate-x-0.5">Visit shop →</span></p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                      {own.map((p) => (
+                        <div key={p.id} className="min-w-0">
+                          <div className="aspect-[4/3] overflow-hidden rounded-[6px] bg-card"><ProductArt name={p.name} accent={s.accent} image={p.image_url} className={`transition duration-700 group-hover:scale-[1.04] ${p.stock === 0 ? "grayscale" : ""}`} /></div>
+                          <p className="mt-2 truncate text-[13px] font-medium">{p.name}</p>
+                          <p className="mono flex justify-between gap-2 text-[11px] text-muted"><span>{formatMoney(p.price_cents, p.currency)}</span>{p.stock != null && <span className={p.stock === 0 ? "" : p.stock <= 3 ? "text-[#c2410c]" : "text-moss"}>{p.stock === 0 ? "sold out" : `${p.stock} left`}</span>}</p>
+                        </div>
+                      ))}
                     </div>
                   </Link>
                 </Reveal>
@@ -148,7 +155,6 @@ export default async function Home() {
 
         <section className="mx-auto w-full max-w-6xl px-5 pt-28 sm:px-8">
           <Reveal className="panel-dark relative overflow-hidden px-6 py-14 text-center sm:px-12">
-            <div className="dots pointer-events-none absolute inset-0 opacity-[.35] invert" />
             <h2 className="display relative mx-auto max-w-2xl text-[2.1rem] leading-[1.08] sm:text-[2.8rem]">Be where people shop now: inside their AI.</h2>
             <p className="relative mx-auto mt-4 max-w-md text-white/60">Free to try. No code. Your first agent-ready catalogue takes a few minutes.</p>
             <div className="relative mt-8 flex flex-wrap justify-center gap-3">

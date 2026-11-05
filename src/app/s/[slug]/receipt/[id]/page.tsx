@@ -33,9 +33,11 @@ export default async function Receipt({ params }: { params: Promise<{ slug: stri
               <p className="label">{shop.name}</p>
               <p className="mono text-[11px] text-muted">{new Date(order.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</p>
             </div>
-            <h1 className={`display mt-6 text-[2.2rem] leading-tight ${tone}`}>{title}</h1>
+            <div className="mt-6 flex items-start justify-between gap-4">
+              <h1 className={`display min-w-0 text-[2rem] leading-tight sm:text-[2.2rem] ${tone}`}>{title}</h1>
+              {stamp[order.status] && <span className={`stamp mt-2 shrink-0 rounded-md border-2 px-2 py-0.5 text-sm font-bold tracking-[.2em] [animation-delay:900ms] ${good ? "border-moss text-moss" : "border-ink/40 text-ink/50"}`}>{stamp[order.status]}</span>}
+            </div>
             <p className="mt-2 text-muted">{sub}</p>
-            {stamp[order.status] && <span className={`stamp absolute right-6 top-16 rounded-md border-2 px-2 py-0.5 text-sm font-bold tracking-[.2em] [animation-delay:900ms] ${good ? "border-moss text-moss" : "border-ink/40 text-ink/50"}`}>{stamp[order.status]}</span>}
             <ul className="mono mt-7 space-y-2.5 border-t border-dashed border-line pt-5 text-[13px]">
               {order.items.map((i) => <li key={i.product_id} className="flex justify-between gap-4"><span>{i.quantity} × {i.name}</span><span>{formatMoney(i.quantity * i.unit_cents, order.currency)}</span></li>)}
             </ul>
@@ -47,7 +49,7 @@ export default async function Receipt({ params }: { params: Promise<{ slug: stri
           <div aria-hidden className="h-3 bg-[radial-gradient(circle_at_8px_0,transparent_8px,#fff_8.5px)] bg-[length:16px_12px] [transform:scaleY(-1)]" />
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link href={`/s/${shop.slug}`} className="btn btn-ghost">Back to {shop.name}</Link>
-            {order.channel === "agent" && <Link href="/agent" className="btn btn-ink">Back to the agent</Link>}
+            {order.channel === "agent" && <Link href={`/agent?order=${encodeURIComponent(order.id)}`} className="btn btn-ink">Back to the agent</Link>}
           </div>
         </div>
       </main>
