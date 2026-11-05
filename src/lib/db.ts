@@ -71,7 +71,6 @@ create table if not exists events (
 create index if not exists events_shop on events(shop_id, id desc);
 `;
 
-let ready: Promise<Query> | null = null;
 
 async function connect(): Promise<Query> {
   const url = process.env.DATABASE_URL || process.env.POSTGRES_URL;
@@ -84,7 +83,9 @@ async function connect(): Promise<Query> {
   } else {
     const { PGlite } = await import("@electric-sql/pglite");
     const g = globalThis as unknown as { __shelfPg?: InstanceType<typeof PGlite> };
-    g.__shelfPg ??= new PGlite(process.env.PGLITE_DIR || "./.data/pg");
+    const dir = process.env.PGLITE_DIR || "./.data/pg";
+    if (!dir.includes("://")) (await import("node:fs")).mkdirSync(dir, { recursive: true });
+    g.__shelfPg ??= new PGlite(dir);
     const pg = g.__shelfPg;
     await pg.exec(SCHEMA);
     q = async (text, params = []) => (await pg.query(text, params)).rows as Row[];
@@ -96,14 +97,12 @@ async function connect(): Promise<Query> {
 
 export async function sql<T = Row>(text: string, params: unknown[] = []): Promise<T[]> {
   const g = globalThis as unknown as { __shelfDb?: Promise<Query> };
-  ready = g.__shelfDb ??= ready ?? connect();
-  try {
-    const q = await ready;
-    return (await q(text, params)) as T[];
-  } catch (e) {
-    if (String(e).includes("connect")) g.__shelfDb = undefined;
+  g.__shelfDb ??= connect().catch((e) => {
+    g.__shelfDb = undefined;
     throw e;
-  }
+  });
+  const q = await g.__shelfDb;
+  return (await q(text, params)) as T[];
 }
 
 export async function one<T = Row>(text: string, params: unknown[] = []): Promise<T | null> {
