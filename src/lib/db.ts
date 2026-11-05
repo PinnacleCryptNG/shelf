@@ -39,6 +39,7 @@ create table if not exists products (
   created_at timestamptz not null default now()
 );
 create index if not exists products_shop on products(shop_id);
+alter table products add column if not exists image_credit text;
 create table if not exists orders (
   id text primary key,
   shop_id text not null references shops(id) on delete cascade,

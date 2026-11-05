@@ -1,3 +1,4 @@
+import { localPhoto } from "@/lib/photos";
 import { beforeAll, describe, expect, it } from "vitest";
 import { sql } from "@/lib/db";
 import { hit } from "@/lib/guard";
@@ -119,5 +120,18 @@ describe("public dashboard redaction", () => {
     const [e] = redactEvents([{ id: 1, shop_id: "s", kind: "paid", actor: "paypal", summary: "John Doe paid €32.00 with PayPal", data: { capture_id: "C" }, created_at: "" }], [order]);
     expect(e.summary).toBe("John D. paid €32.00 with PayPal");
     expect(e.data).toBeNull();
+  });
+});
+
+describe("product photos", () => {
+  it("matches real photos for known products", () => {
+    expect(localPhoto("Adobo tacos")).toBe("/products/adobo-tacos.webp");
+    expect(localPhoto("Matcha starter kit")).toBe("/products/matcha-kit.webp");
+    expect(localPhoto("Sourdough starter")).toBe("/products/sourdough-starter.webp");
+    expect(localPhoto("Family tray", true)).toBeNull();
+    expect(localPhoto("Family tray")).toBe("/products/family-tray.webp");
+    expect(localPhoto("Bundle of joy")).toBeNull();
+    expect(localPhoto("Chicken adobo bowl", false, "Mains")).toBeNull();
+    expect(localPhoto("Breakfast bowl", false, "Tableware")).toBe("/products/breakfast-bowls.webp");
   });
 });

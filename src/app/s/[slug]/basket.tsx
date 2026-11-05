@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { ProductArt } from "@/components/product-art";
 import { formatMoney } from "@/lib/types";
 
-type P = { id: string; name: string; description: string; price_cents: number; currency: string; category: string; image_url: string | null; stock: number | null };
+type P = { id: string; name: string; description: string; price_cents: number; currency: string; category: string; image_url: string | null; image_credit?: string | null; stock: number | null };
 
 export function Basket({ slug, accent, products, categories }: { slug: string; accent: string; products: P[]; categories: string[] }) {
   const [cart, setCart] = useState<Record<string, number>>({});
@@ -47,7 +47,7 @@ export function Basket({ slug, accent, products, categories }: { slug: string; a
             return (
               <li key={p.id} id={p.id} className="rise group flex flex-col" style={{ animationDelay: `${Math.min(i, 12) * 40}ms` }}>
                 <div className={`relative aspect-[4/3] overflow-hidden rounded-[10px] bg-card transition ${n ? "ring-2 ring-ink ring-offset-2 ring-offset-paper" : ""}`}>
-                  <ProductArt name={p.name} accent={accent} image={p.image_url} className={`transition duration-500 group-hover:scale-[1.04] ${out ? "grayscale" : ""}`} />
+                  <ProductArt name={p.name} accent={accent} image={p.image_url} credit={p.image_credit} className={`transition duration-500 group-hover:scale-[1.04] ${out ? "grayscale" : ""}`} />
                   {(out || low) && <span className={`absolute left-3 top-3 rounded-md px-2 py-1 text-[11px] font-semibold ${out ? "bg-ink text-white" : "bg-white text-[#c2410c]"}`}>{out ? "Sold out" : `Only ${p.stock} left`}</span>}
                 </div>
                 <div className="price-tag mt-2.5 flex flex-1 flex-col !p-3 sm:!px-4 sm:!py-3.5">

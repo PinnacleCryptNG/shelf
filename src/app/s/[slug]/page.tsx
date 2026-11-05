@@ -45,8 +45,14 @@ export default async function Storefront({ params }: { params: Promise<{ slug: s
           slug={shop.slug}
           accent={shop.accent}
           categories={categories}
-          products={products.map((p) => ({ id: p.id, name: p.name, description: p.description, price_cents: p.price_cents, currency: p.currency, category: p.category, image_url: p.image_url, stock: p.stock }))}
+          products={products.map((p) => ({ id: p.id, name: p.name, description: p.description, price_cents: p.price_cents, currency: p.currency, category: p.category, image_url: p.image_url, image_credit: p.image_credit ?? null, stock: p.stock }))}
         />
+        {products.some((p) => p.image_credit) && (
+          <details className="mt-12 text-[12.5px] text-muted">
+            <summary className="cursor-pointer select-none">Photo credits</summary>
+            <ul className="mt-2 space-y-1">{products.filter((p) => p.image_credit).map((p) => <li key={p.id}>{p.name}: {p.image_credit}</li>)}</ul>
+          </details>
+        )}
       </main>
       <Footer />
     </>

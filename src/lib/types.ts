@@ -27,6 +27,7 @@ export type Product = {
   category: string;
   tags: string[];
   image_url: string | null;
+  image_credit?: string | null;
   stock: number | null;
   paypal_product_id: string | null;
   position: number;

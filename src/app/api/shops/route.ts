@@ -6,6 +6,7 @@ import { limited, readJson } from "@/lib/guard";
 import { PAYPAL_CURRENCIES } from "@/lib/types";
 import { ownerCookie } from "@/lib/owner";
 import { logEvent } from "@/lib/store";
+import { findPhoto } from "@/lib/photos";
 
 const text = (max: number) => z.string().trim().max(max);
 const Body = z.object({
@@ -52,13 +53,14 @@ export async function POST(req: Request) {
     [id, slug, draft.shop.name, draft.shop.tagline, draft.shop.about, draft.shop.city, draft.shop.country, draft.shop.currency,
       source_url || null, null, key, draft.shop.ships_to],
   );
+  const photos = await Promise.all(draft.products.map((p) => (p.image_url?.startsWith("https://") ? { url: p.image_url, credit: null } : findPhoto(p.name, p.category))));
   let pos = 0;
-  for (const p of draft.products) {
+  for (const [i, p] of draft.products.entries()) {
     await sql(
-      `insert into products (id, shop_id, name, description, price_cents, currency, category, tags, image_url, stock, position)
-       values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+      `insert into products (id, shop_id, name, description, price_cents, currency, category, tags, image_url, image_credit, stock, position)
+       values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
       [`p_${nanoid(10)}`, id, p.name, p.description, Math.round(p.price * 100), draft.shop.currency, p.category,
-        p.tags.map((t) => t.toLowerCase()).slice(0, 8), p.image_url?.startsWith("https://") ? p.image_url : null, p.stock ?? null, pos++],
+        p.tags.map((t) => t.toLowerCase()).slice(0, 8), photos[i]?.url ?? null, photos[i]?.credit ?? null, p.stock ?? null, pos++],
     );
   }
   await logEvent(id, "created", `Shop drafted with ${draft.products.length} products`, undefined, "owner");
