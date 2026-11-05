@@ -3,6 +3,7 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CopyField } from "@/components/copy-field";
+import { ProductsGrid } from "@/components/products-grid";
 import { formatMoney, type Order, type ShopEvent } from "@/lib/types";
 
 type P = { id: string; name: string; price_cents: number; stock: number | null; synced: boolean };
@@ -39,6 +40,12 @@ export function Dashboard({ shop, mcpUrl, initialOrders, initialEvents, products
     }, 2500);
     return () => clearInterval(t);
   }, [shop.slug]);
+
+  const sold = useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const o of orders) if (["PAID", "SHIPPED"].includes(o.status)) for (const i of o.items) m[i.product_id] = (m[i.product_id] || 0) + i.quantity;
+    return m;
+  }, [orders]);
 
   const stats = useMemo(() => {
     const paid = orders.filter((o) => ["PAID", "SHIPPED"].includes(o.status));
@@ -77,18 +84,7 @@ export function Dashboard({ shop, mcpUrl, initialOrders, initialEvents, products
               <ul className="space-y-3">{orders.map((o) => <OrderRow key={o.id} o={o} slug={shop.slug} onChange={(u) => setOrders((os) => os.map((x) => (x.id === u.id ? u : x)))} />)}</ul>
             )
           ) : (
-            <ul className="divide-y divide-line rounded-2xl border border-line bg-card">
-              {products.map((p) => (
-                <li key={p.id} className="flex items-center justify-between gap-3 p-3.5 text-sm">
-                  <span className="min-w-0 truncate">{p.name}</span>
-                  <span className="flex shrink-0 items-center gap-3">
-                    <span className="mono">{formatMoney(p.price_cents, shop.currency)}</span>
-                    <span className="text-muted">{p.stock === null ? "∞" : `${p.stock} left`}</span>
-                    <span className={`mono rounded-full px-2 py-0.5 text-[10px] ${p.synced ? "bg-[#ffc439]/40" : "bg-paper text-muted"}`}>{p.synced ? "PayPal ✓" : "not synced"}</span>
-                  </span>
-                </li>
-              ))}
-            </ul>
+            <ProductsGrid currency={shop.currency} rows={products.map((p) => ({ ...p, sold: sold[p.id] || 0 }))} />
           )}
         </section>
 
