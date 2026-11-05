@@ -40,7 +40,7 @@ export function AgentScene({ items, shopCount, productCount }: { items: SceneIte
         <span className={t < 1900 ? "caret" : ""}>{typed || "\u00a0"}</span>
       </p>
 
-      <div className={`mt-4 transition-opacity duration-500 ${scanning ? "opacity-100" : "opacity-0"}`}>
+      <div className={`mt-4 transition-opacity duration-500 ${scanning ? "opacity-100" : "opacity-40"}`}>
         <p className="mono text-[10.5px] text-white/45">search_all_products · {shopCount} shops · {productCount} products</p>
         <div className="relative mt-2 grid grid-cols-4 gap-2 overflow-hidden">
           {scanning && !matched && <span key={loop} className="scan-line" />}
@@ -60,7 +60,7 @@ export function AgentScene({ items, shopCount, productCount }: { items: SceneIte
       <div className="relative mt-4 h-[178px]">
         {receipt && pick && (
           <div key={loop} className="print absolute inset-x-0 top-0 rounded-xl bg-[#fbfbf8] p-3.5 text-ink [mask-image:linear-gradient(#000_92%,transparent)]">
-            <div className="flex justify-between text-[11px]"><span className="label !text-[10px] truncate">{pick.shop} · {pick.city}</span><span className="mono text-[10px] text-muted">create_checkout</span></div>
+            <div className="flex justify-between text-[11px]"><span className="label !text-[10px] truncate">{pick.shop} · {pick.city}</span><span className="mono hidden text-[10px] text-muted sm:inline">create_checkout</span></div>
             <div className="mt-2 flex justify-between border-b border-dashed border-line pb-2 text-[13px]"><span className="truncate pr-3">1 × {pick.name}</span><span className="mono">{pick.price}</span></div>
             <div className="mt-2 flex justify-between text-[13px] font-semibold"><span>Total</span><span className="mono">{pick.price}</span></div>
             <div className={`btn btn-paypal mt-3 w-full !py-2 text-[13px] transition ${pressed ? "scale-[.97] brightness-95" : ""}`}>Approve {pick.price} in PayPal</div>
