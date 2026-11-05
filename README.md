@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Shelf
 
-## Getting Started
+**Let AI agents shop at your shop.**
 
-First, run the development server:
+Big retailers already sell through Claude and ChatGPT. The bakery down the road can't. Shelf turns a small shop's website, Instagram page or a photo of its menu into a catalogue that any AI agent can search and buy from, with checkout through PayPal.
+
+Built for the [PayPal AI Hackathon](https://paypalaihackathon.devpost.com/).
+
+## How it works
+
+1. **Import.** The owner pastes a URL, pastes a price list, or snaps a photo of the menu. An LLM (Claude or Gemini via the Vercel AI SDK) extracts the shop profile and every priced item into a structured catalogue. It is told never to invent products or prices.
+2. **Publish.** The owner edits the draft and publishes. Each product is created in the **PayPal Catalog Products API**, and the shop gets:
+   - an MCP server at `/s/<shop>/mcp` (streamable HTTP)
+   - `/s/<shop>/llms.txt` and `/s/<shop>/feed.json`
+   - a human storefront at `/s/<shop>`
+3. **Agents buy.** Any MCP client connects to `/mcp` (every shop) or a single shop's endpoint and uses `find_shops`, `search_all_products`, `search_products`, `create_checkout`, `get_order_status`. `create_checkout` creates a **PayPal Order** (intent `CAPTURE`) whose total is worked out on the server from the shop's prices and stock, and returns an `approve_url`.
+4. **The buyer approves.** Money moves only after the person approves in PayPal. Shelf captures the order on return (and from the `CHECKOUT.ORDER.APPROVED` / `PAYMENT.CAPTURE.COMPLETED` webhook), takes the items out of stock and pushes the event to the owner's live dashboard.
+5. **The owner runs the shop with a copilot.** The dashboard copilot uses the **PayPal Agent Toolkit** (`create_shipment_tracking`, `create_refund`, `get_order`, `list_transactions`, `get_merchant_insights`) plus Shelf's own sales tools. It answers "what sold this week?", adds tracking and issues refunds. It asks the owner to confirm before any refund.
+
+A built-in demo agent at `/agent` connects to Shelf's public MCP endpoint with `@ai-sdk/mcp`, exactly as Claude or ChatGPT would.
+
+## Safety model
+
+- Agents can never complete a payment. Every order needs the buyer to approve it in PayPal.
+- Agents send product IDs and quantities only. Prices and totals come from the database, so a hidden instruction on a web page can't change what gets charged.
+- An order only counts as `PAID` after a PayPal capture returns `COMPLETED`.
+- The URL importer only fetches public http(s) addresses (private IP ranges are blocked).
+
+## Stack
+
+Next.js 15 (App Router) · TypeScript · Tailwind v4 · Vercel AI SDK (Anthropic / Google) · `@modelcontextprotocol/sdk` · `@paypal/agent-toolkit` · PayPal REST (Orders v2, Catalog, Tracking, Refunds, Webhooks) · Postgres (Neon) or embedded PGlite.
+
+## Run locally
 
 ```bash
+cp .env.example .env.local   # add PayPal sandbox + AI keys
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+With no PayPal keys, Shelf runs in **mock mode**: orders get `MOCK-` IDs and a local approval page, so the whole flow can be tried offline. With no `DATABASE_URL`, it uses embedded PGlite and seeds three demo shops (Bristol, Lisbon, Kyoto).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Connect an agent:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```json
+{ "mcpServers": { "shelf": { "url": "http://localhost:3000/mcp" } } }
+```
 
-## Learn More
+## License
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+MIT
