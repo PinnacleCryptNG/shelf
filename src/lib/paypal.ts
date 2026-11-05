@@ -169,8 +169,8 @@ export async function createCatalogProduct(p: { name: string; description: strin
     name: p.name.slice(0, 127),
     description: (p.description || p.name).slice(0, 256),
     type: "PHYSICAL",
-    home_url: p.homeUrl,
   };
+  if (/^https:\/\/(?!localhost|127\.)/.test(p.homeUrl)) body.home_url = p.homeUrl;
   if (p.imageUrl?.startsWith("https://")) body.image_url = p.imageUrl;
   try {
     const res = await pp<{ id: string }>("/v1/catalogs/products", { method: "POST", body, requestId: `product-${p.ref}` });
