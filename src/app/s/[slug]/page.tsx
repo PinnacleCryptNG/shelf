@@ -25,7 +25,7 @@ export default async function Storefront({ params }: { params: Promise<{ slug: s
     <>
       <Header right={<><Link href={`/s/${shop.slug}/dashboard`} className="rounded-lg px-3 py-2 text-sm text-muted transition hover:text-ink">Shop dashboard</Link><Link href="/start" className="btn btn-ghost ml-1 hidden !px-3.5 !py-2 text-[14px] sm:inline-flex">Open your shop</Link></>} />
       <main className="mx-auto w-full max-w-6xl px-5 sm:px-8">
-        <section className="rise relative grid gap-10 border-b border-line pb-10 pt-8 sm:pt-12 md:grid-cols-[1.35fr_1fr] md:items-end [&>*]:min-w-0">
+        <section className="rise relative grid gap-10 overflow-x-clip border-b border-line pb-10 pt-8 sm:pt-12 md:grid-cols-[1.35fr_1fr] md:items-end [&>*]:min-w-0">
           <div aria-hidden className="glow -right-40 -top-40 h-96 w-96" />
           <div className="relative">
             <span className="aisle"><b>{shop.name.slice(0, 1)}</b><span>{[shop.city, shop.country].filter(Boolean).join(" · ")}</span></span>

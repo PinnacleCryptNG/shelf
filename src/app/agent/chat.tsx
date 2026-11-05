@@ -114,7 +114,7 @@ export function AgentChat({ aiReady, model, resumeOrder = null }: { aiReady: boo
           <div key={m.id} className={m.role === "user" ? "flex justify-end" : ""}>
             <div className={m.role === "user" ? "rise max-w-[85%] rounded-[14px] rounded-br-[4px] bg-ink px-4 py-2.5 text-white" : "w-full"}>
               {m.parts.map((p, i) => {
-                if (p.type === "text") return <p key={i} className="whitespace-pre-wrap leading-relaxed">{p.text}</p>;
+                if (p.type === "text") return <p key={i} className="whitespace-pre-wrap leading-relaxed">{p.text.split(/\*\*(.+?)\*\*/g).map((t, k) => (k % 2 ? <strong key={k} className="font-semibold">{t}</strong> : t))}</p>;
                 if (p.type === "dynamic-tool" || p.type.startsWith("tool-")) return <Tool key={i} part={p as unknown as ToolPart} onApproved={(id) => { setPending(null); ask(`I've approved order ${id} in PayPal. Is it paid?`); }} />;
                 return null;
               })}
