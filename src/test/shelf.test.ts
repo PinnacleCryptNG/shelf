@@ -3,7 +3,7 @@ import { sql } from "@/lib/db";
 import { hit } from "@/lib/guard";
 import { isPrivateAddress } from "@/lib/importer";
 import {
-  CheckoutError, createCheckout, getOrderRow, getProduct, getShop, listProducts, rankProducts, recordExternalRefund, settlePayPalOrder,
+  CheckoutError, createCheckout, getOrderRow, getProduct, getShop, listProducts, rankProducts, recordExternalRefund, redactEvents, settlePayPalOrder,
 } from "@/lib/store";
 import type { Shop } from "@/lib/types";
 
@@ -110,5 +110,14 @@ describe("rate limits", () => {
     const r = [];
     for (let i = 0; i < 4; i++) r.push(await hit("test:ip", 3, 60));
     expect(r).toEqual([true, true, true, false]);
+  });
+});
+
+describe("public dashboard redaction", () => {
+  it("hides buyer surnames in activity", () => {
+    const order = { buyer_name: "John Doe", buyer_email: "j@x.com" } as Parameters<typeof redactEvents>[1][number];
+    const [e] = redactEvents([{ id: 1, shop_id: "s", kind: "paid", actor: "paypal", summary: "John Doe paid €32.00 with PayPal", data: { capture_id: "C" }, created_at: "" }], [order]);
+    expect(e.summary).toBe("John D. paid €32.00 with PayPal");
+    expect(e.data).toBeNull();
   });
 });

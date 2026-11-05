@@ -1,5 +1,5 @@
 import { canView, isOwner } from "@/lib/owner";
-import { expireStaleCheckouts, getShop, listEvents, listOrders, listProducts, redactOrder } from "@/lib/store";
+import { expireStaleCheckouts, getShop, listEvents, listOrders, listProducts, redactEvents, redactOrder } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +11,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
   await expireStaleCheckouts(shop.id);
   const [events, orders, products] = await Promise.all([listEvents(shop.id, after), listOrders(shop.id), listProducts(shop.id, true)]);
   return Response.json({
-    events,
+    events: owner ? events : redactEvents(events, orders),
     orders: owner ? orders : orders.map(redactOrder),
     products: products.map((p) => ({ id: p.id, name: p.name, price_cents: p.price_cents, stock: p.stock, synced: Boolean(p.paypal_product_id) })),
   });

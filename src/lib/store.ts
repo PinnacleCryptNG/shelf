@@ -256,6 +256,14 @@ export async function recordExternalRefund(paypalOrderId: string, refundId: stri
 }
 
 /** What a visitor to a public demo dashboard may see: no buyer emails, initials only. */
+export function redactEvents(events: ShopEvent[], orders: Order[]): ShopEvent[] {
+  const names = orders
+    .map((o) => [o.buyer_name, redactOrder(o).buyer_name] as const)
+    .filter((n): n is readonly [string, string] => Boolean(n[0] && n[1] && n[0] !== n[1]))
+    .sort((a, b) => b[0].length - a[0].length);
+  return events.map((e) => ({ ...e, summary: names.reduce((s, [full, short]) => s.split(full).join(short), e.summary), data: null }));
+}
+
 export function redactOrder(o: Order): Order {
   const name = o.buyer_name ? o.buyer_name.split(/\s+/).map((w, i) => (i === 0 ? w : `${w[0]}.`)).join(" ") : null;
   return { ...o, buyer_name: name, buyer_email: null };

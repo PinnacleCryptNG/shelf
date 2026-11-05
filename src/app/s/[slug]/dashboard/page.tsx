@@ -7,7 +7,7 @@ import { aiProvider } from "@/lib/ai";
 import { baseUrlFrom } from "@/lib/base-url";
 import { canView, isOwner } from "@/lib/owner";
 import { paypalConfigured } from "@/lib/paypal";
-import { expireStaleCheckouts, getShop, listEvents, listOrders, listProducts, redactOrder } from "@/lib/store";
+import { expireStaleCheckouts, getShop, listEvents, listOrders, listProducts, redactEvents, redactOrder } from "@/lib/store";
 import { Dashboard } from "./dashboard";
 
 export const dynamic = "force-dynamic";
@@ -39,7 +39,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
         shop={{ slug: shop.slug, name: shop.name, currency: shop.currency, accent: shop.accent, is_demo: shop.is_demo }}
         mcpUrl={`${base}/s/${shop.slug}/mcp`}
         initialOrders={owner ? orders : orders.map(redactOrder)}
-        initialEvents={events}
+        initialEvents={owner ? events : redactEvents(events, orders)}
         products={products.map((p) => ({ id: p.id, name: p.name, price_cents: p.price_cents, stock: p.stock, synced: Boolean(p.paypal_product_id) }))}
         aiReady={aiProvider() !== null}
         paypalLive={paypalConfigured()}
