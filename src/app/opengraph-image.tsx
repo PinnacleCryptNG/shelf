@@ -2,31 +2,43 @@ import { ImageResponse } from "next/og";
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
-export const alt = "Shelf — let AI agents shop at your shop";
+export const alt = "Shelf: small shops, open to AI agents";
+
+function Mark({ s = 64 }: { s?: number }) {
+  return (
+    <svg width={s} height={s} viewBox="0 0 32 32">
+      <path d="M2.6 16 9.4 6.6c.4-.5 1-.8 1.6-.8H27a2.4 2.4 0 0 1 2.4 2.4v15.6a2.4 2.4 0 0 1-2.4 2.4H11c-.6 0-1.2-.3-1.6-.8Z" fill="#0f1012" />
+      <circle cx="10.4" cy="16" r="2.3" fill="#f3f3ef" />
+      <rect x="15.5" y="10.5" width="1.6" height="11" fill="#f3f3ef" />
+      <rect x="18.6" y="10.5" width="3" height="11" fill="#f3f3ef" />
+      <rect x="23.1" y="10.5" width="1.6" height="11" fill="#f3f3ef" />
+      <rect x="13.5" y="15.1" width="17.5" height="1.8" rx=".9" fill="#ff4a24" />
+    </svg>
+  );
+}
 
 export default function OG() {
-  const books = [["#d9502b", 150], ["#1f4d3a", 110], ["#b45309", 130], ["#0f766e", 96], ["#191714", 140], ["#d9502b", 104]] as const;
+  const tags = [["Tide mug", "Kiln & Tide", "€32.00"], ["Sourdough loaf", "Fernhill Bakehouse", "£6.50"], ["Uji matcha, 30 g", "Mori Tea Works", "¥3,800"]];
   return new ImageResponse(
     (
-      <div style={{ width: 1200, height: 630, background: "#f3eee4", display: "flex", flexDirection: "column", justifyContent: "space-between", padding: "64px 72px", fontFamily: "Georgia, serif", color: "#191714" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 16, fontSize: 40, fontWeight: 700 }}>
-          <div style={{ display: "flex", alignItems: "flex-end", gap: 4 }}>
-            <div style={{ width: 14, height: 30, background: "#d9502b", borderRadius: 3 }} />
-            <div style={{ width: 12, height: 22, background: "#1f4d3a", borderRadius: 3 }} />
-            <div style={{ width: 12, height: 26, background: "#191714", borderRadius: 6 }} />
+      <div style={{ width: 1200, height: 630, background: "#f3f3ef", display: "flex", padding: 72, fontFamily: "sans-serif", color: "#0f1012" }}>
+        <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", width: 620 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, fontSize: 44, fontWeight: 700, letterSpacing: -2 }}><Mark s={56} />shelf</div>
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <div style={{ fontSize: 80, lineHeight: 1.02, fontWeight: 700, letterSpacing: -3 }}>Small shops,</div>
+            <div style={{ display: "flex", fontSize: 80, lineHeight: 1.02, fontWeight: 700, letterSpacing: -3 }}>open to&nbsp;<span style={{ color: "#ff4a24" }}>AI agents.</span></div>
+            <div style={{ marginTop: 28, fontSize: 28, lineHeight: 1.35, color: "#5f6268" }}>Any agent can search and buy. Every payment is approved by the buyer in PayPal.</div>
           </div>
-          Shelf
         </div>
-        <div style={{ display: "flex", flexDirection: "column" }}>
-          <div style={{ fontSize: 92, lineHeight: 1, fontWeight: 700, letterSpacing: -2 }}>Let AI agents shop</div>
-          <div style={{ display: "flex", fontSize: 92, lineHeight: 1.05, fontWeight: 700, letterSpacing: -2 }}>at&nbsp;<span style={{ color: "#d9502b", fontStyle: "italic" }}>your</span>&nbsp;shop.</div>
-          <div style={{ marginTop: 26, fontSize: 30, color: "#6b645a", fontFamily: "sans-serif" }}>Website, Instagram or menu photo → a catalogue Claude & ChatGPT can buy from, paid with PayPal.</div>
-        </div>
-        <div style={{ display: "flex", flexDirection: "column" }}>
-          <div style={{ display: "flex", alignItems: "flex-end", gap: 18, paddingLeft: 40 }}>
-            {books.map(([c, h], i) => <div key={i} style={{ width: 64, height: h / 1.6, background: c, borderRadius: 6 }} />)}
-          </div>
-          <div style={{ height: 18, background: "#b98a5e", borderRadius: 4 }} />
+        <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 18, marginLeft: 48, width: 388, background: "#15171a", borderRadius: 28, padding: 32, position: "relative" }}>
+          {tags.map(([n, s, p], i) => (
+            <div key={n} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: i === 0 ? "#ffffff" : "rgba(255,255,255,.07)", color: i === 0 ? "#0f1012" : "#f3f3ef", borderRadius: 16, padding: "18px 20px", border: i === 0 ? "3px solid #ff4a24" : "3px solid transparent" }}>
+              <div style={{ display: "flex", flexDirection: "column" }}><div style={{ fontSize: 24, fontWeight: 700 }}>{n}</div><div style={{ fontSize: 18, opacity: 0.55 }}>{s}</div></div>
+              <div style={{ fontSize: 22 }}>{p}</div>
+            </div>
+          ))}
+          <div style={{ display: "flex", justifyContent: "center", background: "#ffc439", color: "#0b1f44", borderRadius: 14, padding: "16px 0", fontSize: 22, fontWeight: 700 }}>Approve €32.00 in PayPal</div>
+          <div style={{ position: "absolute", left: 0, right: 0, top: 112, height: 3, background: "#ff4a24", boxShadow: "0 0 18px #ff4a24" }} />
         </div>
       </div>
     ),
