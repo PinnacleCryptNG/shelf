@@ -22,7 +22,7 @@ export async function POST(req: Request) {
     if (!draft.products.length) return Response.json({ error: "No priced items found. Try a menu photo or paste your price list." }, { status: 422 });
     return Response.json({ draft });
   } catch (e) {
-    const msg = e instanceof Error && e.message.length < 160 && !/at |\n/.test(e.message) ? e.message : "Import failed. Try pasting the price list instead.";
+    const msg = e instanceof Error && e.message.length < 160 && !/\n|\bat \S+:\d+/.test(e.message) ? e.message : "Import failed. Try pasting the price list instead.";
     return Response.json({ error: msg }, { status: 400 });
   }
 }
