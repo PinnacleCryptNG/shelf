@@ -20,11 +20,12 @@ function ago(iso: string) {
   return s < 60 ? `${s}s ago` : s < 3600 ? `${Math.round(s / 60)}m ago` : s < 86400 ? `${Math.round(s / 3600)}h ago` : `${Math.round(s / 86400)}d ago`;
 }
 
-export function Dashboard({ shop, mcpUrl, initialOrders, initialEvents, products, aiReady, paypalLive }: {
+export function Dashboard({ shop, mcpUrl, initialOrders, initialEvents, products: initialProducts, aiReady, paypalLive }: {
   shop: ShopLite; mcpUrl: string; initialOrders: Order[]; initialEvents: ShopEvent[]; products: P[]; aiReady: boolean; paypalLive: boolean;
 }) {
   const [orders, setOrders] = useState(initialOrders);
   const [events, setEvents] = useState(initialEvents);
+  const [products, setProducts] = useState(initialProducts);
   const [fresh, setFresh] = useState<number | null>(null);
   const [tab, setTab] = useState<"orders" | "products">("orders");
   const last = useRef(initialEvents[0]?.id || 0);
@@ -33,9 +34,10 @@ export function Dashboard({ shop, mcpUrl, initialOrders, initialEvents, products
     const t = setInterval(async () => {
       const r = await fetch(`/api/shops/${shop.slug}/events`, { cache: "no-store" });
       if (!r.ok) return;
-      const j = (await r.json()) as { events: ShopEvent[]; orders: Order[] };
+      const j = (await r.json()) as { events: ShopEvent[]; orders: Order[]; products?: P[] };
       setOrders(j.orders);
       setEvents(j.events);
+      if (j.products) setProducts(j.products);
       if (j.events[0] && j.events[0].id > last.current) { setFresh(j.events[0].id); last.current = j.events[0].id; }
     }, 2500);
     return () => clearInterval(t);
