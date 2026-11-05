@@ -21,7 +21,7 @@ export default async function Home() {
     <>
       <Header />
       <main className="mx-auto w-full max-w-6xl px-5 sm:px-8">
-        <section className="grid items-center gap-12 pb-16 pt-8 lg:grid-cols-[1.15fr_1fr] lg:pt-14">
+        <section className="grid items-center gap-12 [&>*]:min-w-0 pb-16 pt-8 lg:grid-cols-[1.15fr_1fr] lg:pt-14">
           <div className="rise">
             <h1 className="display text-[2.9rem] font-semibold leading-[0.98] sm:text-7xl">
               Let AI agents shop at <span className="italic text-tomato">your</span> shop.
@@ -82,7 +82,7 @@ export default async function Home() {
               <li><strong className="text-ink">Owners stay in charge.</strong> Every search, checkout and payment shows up live. A copilot built on the PayPal Agent Toolkit adds tracking, issues refunds and answers &ldquo;what sold this week?&rdquo;</li>
             </ul>
           </div>
-          <div className="rounded-2xl bg-ink p-6 text-card">
+          <div className="min-w-0 rounded-2xl bg-ink p-6 text-card">
             <p className="text-sm text-card/70">One address covers every shop on Shelf</p>
             <div className="mt-3 [&_div]:border-white/15 [&_div]:bg-white/5"><CopyField value={`${base}/mcp`} /></div>
             <pre className="mono mt-5 overflow-x-auto text-[12.5px] leading-relaxed text-card/85">{`{

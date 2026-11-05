@@ -26,15 +26,15 @@ export function ProductArt({ name, accent, image, className = "" }: { name: stri
   }
   const h = hash(name);
   const tone = TONES[h % TONES.length];
-  const main = (h >> 4) % 3 === 0 ? accent : INKS[(h >> 6) % INKS.length];
-  const second = INKS[(h >> 9) % INKS.length] === main ? accent : INKS[(h >> 9) % INKS.length];
+  const main = (h >>> 4) % 3 === 0 ? accent : INKS[(h >>> 6) % INKS.length];
+  const second = INKS[(h >>> 9) % INKS.length] === main ? accent : INKS[(h >>> 9) % INKS.length];
   return (
     <svg viewBox="0 0 120 90" preserveAspectRatio="xMidYMid slice" className={`h-full w-full ${className}`} aria-hidden>
       <rect width="120" height="90" fill={tone} />
-      <circle cx={18 + (h % 84)} cy={14 + ((h >> 3) % 8)} r="5" fill="#fbf8f2" opacity=".7" />
+      <circle cx={18 + (h % 84)} cy={14 + ((h >>> 3) % 8)} r="5" fill="#fbf8f2" opacity=".7" />
       <rect x="0" y="78" width="120" height="12" fill="#191714" opacity=".05" />
       <ellipse cx="60" cy="78" rx="34" ry="3" fill="#191714" opacity=".08" />
-      {SHAPES[(h >> 12) % SHAPES.length](main, second)}
+      {SHAPES[(h >>> 12) % SHAPES.length](main, second)}
     </svg>
   );
 }

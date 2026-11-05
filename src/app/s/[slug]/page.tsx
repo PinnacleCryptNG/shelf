@@ -25,7 +25,7 @@ export default async function Storefront({ params }: { params: Promise<{ slug: s
     <>
       <Header right={<Link href={`/s/${shop.slug}/dashboard`} className="rounded-full px-3 py-2 text-sm hover:bg-card">Owner</Link>} />
       <main className="mx-auto w-full max-w-6xl px-5 sm:px-8">
-        <section className="rise grid gap-8 border-b border-line pb-10 pt-6 md:grid-cols-[1.4fr_1fr] md:items-end">
+        <section className="rise grid gap-8 [&>*]:min-w-0 border-b border-line pb-10 pt-6 md:grid-cols-[1.4fr_1fr] md:items-end">
           <div>
             <p className="mono mb-3 text-xs uppercase tracking-widest text-muted">{[shop.city, shop.country].filter(Boolean).join(" · ")}</p>
             <h1 className="display text-5xl font-semibold leading-[1.02] sm:text-6xl" style={{ color: shop.accent }}>{shop.name}</h1>

@@ -25,7 +25,7 @@ export function Basket({ slug, accent, products, categories }: { slug: string; a
   }
 
   return (
-    <div className="grid gap-10 pt-8 lg:grid-cols-[1fr_320px]">
+    <div className="grid gap-10 [&>*]:min-w-0 pt-8 lg:grid-cols-[1fr_320px]">
       <section>
         {categories.length > 1 && (
           <div className="mb-6 flex flex-wrap gap-2">
