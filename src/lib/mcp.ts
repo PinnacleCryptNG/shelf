@@ -155,7 +155,18 @@ export function buildServer(req: Request, fixed?: Shop) {
           if (hits.length) await logEvent(s.id, "search", `${agent} found ${hits.length} match${hits.length === 1 ? "" : "es"} for “${query}” in the Shelf directory`, { query });
           results.push(...hits.slice(0, 5).map((p) => publicProduct(p, s, base)));
         }
-        return json({ products: results.slice(0, 30) });
+        if (results.length) return json({ products: results.slice(0, 30) });
+        return json({
+          products: [],
+          note: "Nothing on Shelf matches this request. Tell the buyer plainly and describe what the listed shops do sell. Do not guess beyond this list.",
+          shops: shops.map((s) => ({
+            shop: s.slug,
+            name: s.name,
+            location: [s.city, s.country].filter(Boolean).join(", "),
+            tagline: s.tagline,
+            categories: [...new Set(all.filter((p) => p.shop_id === s.id).map((p) => p.category).filter(Boolean))].slice(0, 8),
+          })),
+        });
       },
     );
   }
