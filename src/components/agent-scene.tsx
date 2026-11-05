@@ -64,9 +64,9 @@ export function AgentScene({ items, shopCount, productCount }: { items: SceneIte
                   </div>
                   <div className={`price-tag mt-3 transition duration-500 ${matched && !hit ? "opacity-40" : ""}`}>
                     <p className="line-clamp-2 min-h-[2.5em] text-[12px] font-medium leading-tight">{p.name}</p>
-                    <p className="mt-0.5 flex items-baseline justify-between gap-1">
+                    <p className="mt-0.5 flex flex-wrap items-baseline justify-between gap-x-1">
                       <span className="mono text-[12px] font-medium">{p.price}</span>
-                      {p.stock != null && <span className={`mono hidden text-[10px] sm:inline ${p.stock <= 3 ? "text-[#c2410c]" : "text-moss"}`}>{p.stock} left</span>}
+                      {p.stock != null && <span className={`mono hidden whitespace-nowrap text-[10px] xl:inline ${p.stock <= 3 ? "text-[#c2410c]" : "text-moss"}`}>{p.stock} left</span>}
                     </p>
                   </div>
                 </li>
